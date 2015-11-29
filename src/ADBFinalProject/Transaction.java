@@ -8,6 +8,7 @@ import java.util.LinkedList;
  */
 public class Transaction {
   public int transactionNumber;
+  public String transactionType;
   public int arrivalTime;
   public Boolean commitSuccess;
   public LinkedList<Integer> listOfData;
@@ -16,11 +17,13 @@ public class Transaction {
   
   /***
    * Create a new transaction with a transaction number and the arrival time.
-   * @param transactionNum 
-   * @param arrival
+   * @param transactionNum the transaction number. 
+   * @param type the type of transaction.
+   * @param arrival the arrival time of the transaction.
    */
-  public Transaction(int transactionNum, int arrival) {
+  public Transaction(int transactionNum, String type, int arrival) {
 	transactionNumber = transactionNum;
+	transactionType = type;
 	arrivalTime = arrival;
 	commitSuccess = null;
 	listOfData = new LinkedList<Integer>();
