@@ -13,11 +13,11 @@ public class Transaction {
   public Boolean commitSuccess;
   public LinkedList<Integer> listOfData;
   public LinkedList<Integer> listOfTimeAccessed;
-  public LinkedList<Integer> listOfSites;
+  public LinkedList<Integer> listOfSitesAccessed;
   
   /***
    * Create a new transaction with a transaction number and the arrival time.
-   * @param transactionNum the transaction number. 
+   * @param transactionNum the transaction number.
    * @param type the type of transaction.
    * @param arrival the arrival time of the transaction.
    */
@@ -28,6 +28,6 @@ public class Transaction {
 	commitSuccess = null;
 	listOfData = new LinkedList<Integer>();
 	listOfTimeAccessed = new LinkedList<Integer>();
-	listOfSites = new LinkedList<Integer>();
+	listOfSitesAccessed = new LinkedList<Integer>();
   }
 }

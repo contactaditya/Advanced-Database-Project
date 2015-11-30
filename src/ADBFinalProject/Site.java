@@ -21,7 +21,7 @@ public class Site {
    */
   public Site() {
     status = Status.activeAndConsistent;
-    listOfData = new LinkedList<Integer>();
+    listOfData = new LinkedList<Data>();
     lockTable = new HashMap<String, Integer>();
     lastFailedTime = null;
   }
