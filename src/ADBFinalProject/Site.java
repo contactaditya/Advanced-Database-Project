@@ -1,6 +1,7 @@
 package ADBFinalProject;
 
 import ADBFinalProject.Status;
+import ADBFinalProject.Data;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -11,7 +12,7 @@ import java.util.LinkedList;
  */
 public class Site {
   public Status status;
-  public LinkedList<Integer> listOfData;
+  public LinkedList<Data> listOfData;
   public HashMap<String, Integer> lockTable;
   public Integer lastFailedTime;
 

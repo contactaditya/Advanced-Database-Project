@@ -24,6 +24,7 @@ public class ReplicatedConcurrencyControlAndRecovery {
 	 */
 	ArrayList<Site> sites = new ArrayList<Site>(10);
 	for (int siteNumber = 0; siteNumber < 10; siteNumber++) {
+	  
 	}
 	  
 	/*
@@ -52,6 +53,14 @@ public class ReplicatedConcurrencyControlAndRecovery {
 	 *         call transaction manager's fail()
 	 *       case recover:
 	 *         call transaction manager's recovered()
+	 */
+	
+	/*
+	 * For all transactions
+	 *   If commitSuccess
+	 *     output successful commit
+	 *   else
+	 *     output abort reason
 	 */
   }
 }
