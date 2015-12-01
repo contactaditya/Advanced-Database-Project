@@ -3,12 +3,11 @@ package ADBFinalProject;
 /***
  * A database operation in the simulation.
  * @author Shikuan Huang
- *
  */
 public class Operation {
   public int transactionNumber;
   public String operationType;
-  public String nameOfDataToOperateOn;
+  public String dataName;
   public Integer valueToWrite;
   public int waitingLine;
   
@@ -17,10 +16,10 @@ public class Operation {
    * of the data to read or write.
    * @param transactionNum the transaction number.
    * @param type the type of transaction.
-   * @param data the name of the data to read from or write to.
+   * @param dataToOperateOn the name of the data to read from or write to.
    */
-  public Operation(int transactionNum, String type, String dataName) {
-	this(transactionNum, type, dataName, null);
+  public Operation(int transactionNum, String type, String dataToOperateOn) {
+	this(transactionNum, type, dataToOperateOn, null);
   }
   
   /***
@@ -28,13 +27,13 @@ public class Operation {
    * the data to read or write, and the value to write.
    * @param transactionNum the transaction number.
    * @param type the type of transaction.
-   * @param data the name of the data
+   * @param dataToOperateOn the name of the data
    * @param value the value to write to the data specified.
    */
-  public Operation(int transactionNum, String type, String dataName, Integer value) {
+  public Operation(int transactionNum, String type, String dataToOperateOn, Integer value) {
     transactionNumber = transactionNum;
     operationType = type;
-    nameOfDataToOperateOn = dataName;
+    dataName = dataToOperateOn;
     valueToWrite = value;
     waitingLine = -1;
   }

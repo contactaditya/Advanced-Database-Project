@@ -25,4 +25,8 @@ public class Site {
     lockTable = new HashMap<String, Integer>();
     lastFailedTime = null;
   }
+  
+  public void addData(Data dataToAdd) {
+	listOfData.add(dataToAdd);
+  }
 }

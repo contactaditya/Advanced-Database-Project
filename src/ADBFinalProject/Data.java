@@ -8,42 +8,43 @@ import java.util.Queue;
 
 public class Data 
 {
+  // This is the variable used for storing the different names of the data.
+  String name;
 
-	// This is the variable used for storing the value of the actual data.
-	int dataValue[];
+  // This is the variable used for storing the value of the actual data.
+  ArrayList values;
 	
-	// This is the variable used for storing the different names of the data.
-	String dataName;
+  // This is the variable used for storing last time when the data was modified.
+  ArrayList modifiedTimes;
 	
-	// This is the variable used for storing last time when the data was modified.
-	int modifiedTime[];
+  // This boolean is used to check whether the data that is stored is temporary or not.
+  boolean isTemporary;
 	
-	// This boolean is used to check whether the data that is stored is temporary or not.
-	boolean isTemporary;
+  // This boolean is used to indicate whether the data has been replicated on other sites or not
+  boolean isReplicated;
 	
-	// This boolean is used to indicate whether the data has been replicated on other sites or not
-	boolean isReplicated;
+  // This boolean is used to indicate whether data has been written to a transaction site after recovery.
+  boolean hasBeenWrittenToAfterRecovery;
 	
-	// This boolean is used to indicate whether data has been written to a transaction site after recovery.
-	boolean hasBeenWrittenToAfterRecovery;
+  // This queue will store the transaction number which are waiting to be executed.
+  Queue<Integer> waitingQueue;
 	
-	// This queue will store the transaction number which are waiting to be executed.
-	Queue<Integer> waitingQueue;
+  // A constructor which will allow us to pass three values and set the default values.
+  public Data(String dataName, int value, int modifiedTime, boolean isReplicated) {
+    this(dataName, value, modifiedTime, false, isReplicated, true);
+  }
 	
-	// A constructor which will allow us to pass three values and set the default values.
-	public Data(int dataValue[], String dataName, boolean isReplicated) {
-		this(dataValue,dataName,null,false,isReplicated,false);
-	}
-	
-	// A Constructor which will initialise all the data members.
-	public Data(int dataValue[], String dataName, int[] modifiedTime, boolean isTemporary, boolean isReplicated, boolean hasBeenWrittenToAfterRecovery) {
-		this.dataValue = dataValue;
-		this.dataName = dataName;
-		this.modifiedTime = modifiedTime;
-		this.isTemporary = isTemporary;
-		this.isReplicated = isReplicated;
-		this.hasBeenWrittenToAfterRecovery = hasBeenWrittenToAfterRecovery;
-		this.waitingQueue = new LinkedList<Integer>();
-	}
-
+  // A Constructor which will initialise all the data members.
+  public Data(String dataName, int value, int modifiedTime, boolean isTemporary, boolean isReplicated, boolean hasBeenWrittenToAfterRecovery) {
+	values = new ArrayList<Integer>();
+	modifiedTimes = new ArrayList<Integer>();
+	waitingQueue = new LinkedList<Integer>();
+		
+	name = dataName;
+	values.add(value);
+	modifiedTimes.add(modifiedTime);
+	this.isTemporary = isTemporary;
+	this.isReplicated = isReplicated;
+	this.hasBeenWrittenToAfterRecovery = hasBeenWrittenToAfterRecovery;
+  }
 }
