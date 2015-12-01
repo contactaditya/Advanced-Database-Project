@@ -19,25 +19,25 @@ import java.util.Scanner;
 public class ReplicatedConcurrencyControlAndRecovery {
   public static void main(String[] args) throws Exception {
 	int numberOfSites = 10;
-	TransactionManager tm = new TransactionManager(numberOfSites);
+	TransactionManager transactionManager = new TransactionManager(numberOfSites);
 	
 	// Initialize sites with data.
-	for (int dataNum = 1; dataNum <= 20; dataNum++) {
-	  String dataName = "x" + String.valueOf(dataNum);
-	  int initialValue = 10 * dataNum;
+	for (int dataNumber = 1; dataNumber <= 20; dataNumber++) {
+	  String dataName = "x" + String.valueOf(dataNumber);
+	  int initialValue = 10 * dataNumber;
 	  
-	  if (dataNum % 2 != 0) {
+	  if (dataNumber % 2 != 0) {
 		// Initialize odd indexed data.
 		boolean isReplicated = false;
-		int siteNumberToInsert = dataNum % numberOfSites;
-		tm.initializeDataAtSite(siteNumberToInsert, dataName, initialValue, isReplicated);
+		int siteNumberToInsert = dataNumber % numberOfSites;
+		transactionManager.initializeDataAtSite(siteNumberToInsert, dataName, initialValue, isReplicated);
 		//System.out.println(dataName + "(" + isReplicated + ")" + " with value " + initialValue + " added to site " + (siteNumberToInsert + 1));
 	  }
 	  else {
 		// Initialize even indexed data.
 		boolean isReplicated = true;
 		for (int site = 0; site < numberOfSites; site++) {
-		  tm.initializeDataAtSite(site, dataName, initialValue, isReplicated);
+		  transactionManager.initializeDataAtSite(site, dataName, initialValue, isReplicated);
 		  //System.out.println(dataName + "(" + isReplicated + ")" + " with value " + initialValue + " added to site " + (site + 1));
 		}
 	  }
@@ -69,20 +69,20 @@ public class ReplicatedConcurrencyControlAndRecovery {
 			String transactionName = commandTokens[1];
 			int transactionNumber = Integer.parseInt(
 			    transactionName.substring(1, transactionName.length()));
-			tm.begin(time, transactionNumber);
+			transactionManager.begin(time, transactionNumber);
 			break;
 		  case "beginRO":
 			transactionName = commandTokens[1];
 			transactionNumber = Integer.parseInt(
 			    transactionName.substring(1, transactionName.length()));
-			tm.beginRO(time, transactionNumber);
+			transactionManager.beginRO(time, transactionNumber);
 			break;
 		  case "R":
 			transactionName = commandTokens[1];
 			transactionNumber = Integer.parseInt(
 				transactionName.substring(1, transactionName.length()));
 			String dataName = commandTokens[2];
-			tm.read(time, transactionNumber, dataName);
+			transactionManager.read(time, transactionNumber, dataName);
 			break;
 		  case "W":
 			transactionName = commandTokens[1];
@@ -90,15 +90,15 @@ public class ReplicatedConcurrencyControlAndRecovery {
 			  transactionName.substring(1, transactionName.length()));
 		    dataName = commandTokens[2];
 		    int value = Integer.parseInt(commandTokens[3]);
-			tm.write(time, transactionNumber, dataName, value);
+		    transactionManager.write(time, transactionNumber, dataName, value);
 			break;
 		  case "dump":
 			if (commandTokens.length == 1) {
-			  tm.dump();
+			  transactionManager.dump();
 			} else if (commandTokens[1].length() == 1) {
-			  tm.dump(1);
+		      transactionManager.dump(1);
 			} else if (commandTokens[1].length() == 2) {
-              tm.dump("x1");
+		      transactionManager.dump("x1");
 			} else {
 			  throw new Exception("Invalid arguments to dump!");
 			}
@@ -107,19 +107,19 @@ public class ReplicatedConcurrencyControlAndRecovery {
 			transactionName = commandTokens[1];
             transactionNumber = Integer.parseInt(
 		        transactionName.substring(1, transactionName.length()));
-            tm.end(time, transactionNumber);
+            transactionManager.end(time, transactionNumber);
 			break;
 		  case "fail":
 			transactionName = commandTokens[1];
 	        transactionNumber = Integer.parseInt(
 			    transactionName.substring(1, transactionName.length()));
-	        tm.fail(time, transactionNumber);
+	        transactionManager.fail(time, transactionNumber);
 			break;
 		  case "recover":
 			transactionName = commandTokens[1];
 		    transactionNumber = Integer.parseInt(
 				transactionName.substring(1, transactionName.length()));
-		    tm.fail(time, transactionNumber);
+		    transactionManager.fail(time, transactionNumber);
 			break;
 		  default:
 			throw new Exception("Invalid command type!");
@@ -129,7 +129,7 @@ public class ReplicatedConcurrencyControlAndRecovery {
 	}
 
 	// Output whether each transaction committed or failed.
-	tm.printSummary();
+	transactionManager.printSummary();
 	
 	input.close();
   }
