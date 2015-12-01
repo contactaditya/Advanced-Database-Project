@@ -16,6 +16,7 @@ import java.util.Scanner;
  * Performs the replicated concurrency control and recovery simulation.
  * @author Shikuan Huang
  */
+
 public class ReplicatedConcurrencyControlAndRecovery {
   public static void main(String[] args) throws Exception {
 	int numberOfSites = 10;

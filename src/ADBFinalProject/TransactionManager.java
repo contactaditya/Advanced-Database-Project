@@ -46,13 +46,13 @@ public class TransactionManager {
   public int read(Transaction transaction, String data) throws Exception{
 	  Data sitewithdata = null;
 		
-		for(int i =0; i < sites.size();i++)
+		for(int i =0; i < sites.length;i++)
 		{
 			try{
-			Site currentSite = sites.get(i);
+			Site currentSite = sites[i];
 			for(Data d : currentSite.listOfData)
 			{
-		      if(d.dataName.equals(data))
+		      if(d.name.equals(data))
 		      {
 		    	 sitewithdata = d; 
 		      }
@@ -64,10 +64,11 @@ public class TransactionManager {
 		}
 		
 		if(transaction.transactionType.equals("readOnly")){
-			for(int i : sitewithdata.modifiedTime)
+			for(int i : sitewithdata.modifiedTimes)
 			{
 				if(i < transaction.arrivalTime) {
-					return sitewithdata.dataValue[i];
+					
+					return sitewithdata.values.get(i);
 				}
 			}
 			
@@ -75,7 +76,7 @@ public class TransactionManager {
 			
 			return 5;
   }
-  
+
   public void read(int time, int transactionNumber, String dataName) {
 	read(time, transactionNumber, dataName, -1);
   }
