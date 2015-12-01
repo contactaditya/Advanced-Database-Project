@@ -37,16 +37,16 @@ public class TransactionManager {
 	System.out.println("Transaction " + transactionNumber + " (readonly) begins at time " + time);
   }
 	
-  /*public int read(Transaction transaction, String data) throws Exception{
+  public int read(Transaction transaction, String data) throws Exception{
 	  Data sitewithdata = null;
 		
-		for(int i =0; i < sites.size();i++)
+		for(int i =0; i < sites.length;i++)
 		{
 			try{
-			Site currentSite = sites.get(i);
+			Site currentSite = sites[i];
 			for(Data d : currentSite.listOfData)
 			{
-		      if(d.dataName.equals(data))
+		      if(d.name.equals(data))
 		      {
 		    	 sitewithdata = d; 
 		      }
@@ -58,17 +58,18 @@ public class TransactionManager {
 		}
 		
 		if(transaction.transactionType.equals("readOnly")){
-			for(int i : sitewithdata.modifiedTime)
+			for(int i : sitewithdata.modifiedTimes)
 			{
 				if(i < transaction.arrivalTime) {
-					return sitewithdata.dataValue[i];
+					
+					return sitewithdata.values.get(i);
 				}
 			}
 			
 		}
 			
 			return 5;
-  }*/
+  }
 	
   public void read(int time, int transactionNumber, String dataName) {
 	System.out.println("Transaction " + transactionNumber + " wants to read " + dataName + " at time " + time);

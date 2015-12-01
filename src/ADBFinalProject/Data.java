@@ -12,10 +12,10 @@ public class Data
   String name;
 
   // This is the variable used for storing the value of the actual data.
-  ArrayList values;
+  ArrayList<Integer> values;
 	
   // This is the variable used for storing last time when the data was modified.
-  ArrayList modifiedTimes;
+  ArrayList<Integer> modifiedTimes;
 	
   // This boolean is used to check whether the data that is stored is temporary or not.
   boolean isTemporary;
