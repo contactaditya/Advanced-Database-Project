@@ -51,7 +51,6 @@ public class ReplicatedConcurrencyControlAndRecovery {
 	  File inputFile = new File(args[0]);
 	  input = new Scanner(inputFile);
 	} else {
-	  System.out.println("stdin");
       input = new Scanner(System.in);
 	}
 	
@@ -99,7 +98,7 @@ public class ReplicatedConcurrencyControlAndRecovery {
 			} else if (commandTokens[1].length() == 1) {
 		      transactionManager.dump(1);
 			} else if (commandTokens[1].length() == 2) {
-		      transactionManager.dump("x1");
+		      transactionManager.dump(commandTokens[1]);
 			} else {
 			  throw new Exception("Invalid arguments to dump!");
 			}
@@ -129,7 +128,7 @@ public class ReplicatedConcurrencyControlAndRecovery {
 	  time++;
 	}
 
-	// Output whether each transaction committed or failed.
+	// Output whether each transaction committed successfully or failed to commit.
 	transactionManager.printSummary();
 	
 	input.close();

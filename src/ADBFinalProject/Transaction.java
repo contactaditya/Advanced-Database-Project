@@ -14,6 +14,7 @@ public class Transaction {
   public LinkedList<Integer> listOfData;
   public LinkedList<Integer> listOfTimeAccessed;
   public LinkedList<Integer> listOfSitesAccessed;
+  public String abortReason;
   
   /***
    * Create a new transaction with a transaction number and the arrival time.
@@ -29,5 +30,6 @@ public class Transaction {
 	listOfData = new LinkedList<Integer>();
 	listOfTimeAccessed = new LinkedList<Integer>();
 	listOfSitesAccessed = new LinkedList<Integer>();
+	abortReason = null;
   }
 }

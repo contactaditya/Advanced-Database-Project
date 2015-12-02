@@ -106,20 +106,35 @@ public class TransactionManager {
 	System.out.println("DUMP called");
 	
 	for (int site = 0; site < numberOfSites; site++) {
-	  System.out.println("Site " + site);
-	  for (int data = 0; data < sites[site].listOfData.size(); data++) {
-		System.out.println("  ")
-	    sites[site][data]
-	  }
+	  dump(site, null);
+	}
+  }
+  
+  public void dump(int siteNumber) {
+	System.out.println("DUMP called for site " + siteNumber);
+	dump(siteNumber, null);
+  }
+  
+  public void dump(String dataName) {
+	System.out.println("DUMP called for data " + dataName);
+	for (int site = 0; site < numberOfSites; site++) {
+	  dump(site, dataName); 
 	}
   }
 	
-  public void dump(int siteNumber) {
-	System.out.println("DUMP called for site " + siteNumber);
-  }
-	
-  public void dump(String dataName) {
-	System.out.println("DUMP called for data " + dataName);
+  public void dump(int siteNumber, String key) {
+	System.out.println("Site " + siteNumber);
+	for (int data = 0; data < sites[siteNumber].listOfData.size(); data++) {
+	  String currentDataName = sites[siteNumber].listOfData.get(data).name;
+	  if (key == null || currentDataName.equals(key)) {
+		System.out.println("  " + currentDataName);
+		for (int value = 0; value < sites[siteNumber].listOfData.get(data).values.size(); value++) {
+		  System.out.println("    " + sites[siteNumber].listOfData.get(data).values.get(value)
+		      + ", modified at time " + sites[siteNumber].listOfData.get(data).modifiedTimes.get(value));
+		}
+	  }
+	}
+	System.out.println();
   }
   
   public void end(int time, int transactionNumber) {
@@ -135,14 +150,16 @@ public class TransactionManager {
   }
   
   public void printSummary() {
-	/*
-	 * For all transactions
-	 *   If commitSuccess
-	 *     output successful commit
-	 *   else
-	 *     output abort reason
-	 */
-	System.out.println("*SUMMARY TO GO HERE*");
+	// Output whether each transaction committed successfully or failed to commit.
+	System.out.println("Commit Summary");
+	for (Transaction transaction : transactions) {
+	  if (transaction.commitSuccess) {
+	    System.out.println("Transaction " + transaction.transactionNumber + " committed successfully.");
+	  } else {
+		System.out.println("Transaction " + transaction.transactionNumber + " aborted because " +
+	        transaction.abortReason);
+	  }
+	}
   }
 }
 	

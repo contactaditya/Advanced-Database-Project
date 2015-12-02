@@ -3,8 +3,8 @@ package ADBFinalProject;
 import ADBFinalProject.Status;
 import ADBFinalProject.Data;
 
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
 
 /***
  * A site in the simulation.
@@ -12,7 +12,7 @@ import java.util.LinkedList;
  */
 public class Site {
   public Status status;
-  public LinkedList<Data> listOfData;
+  public ArrayList<Data> listOfData;
   public HashMap<String, Integer> lockTable;
   public Integer lastFailedTime;
 
@@ -21,7 +21,7 @@ public class Site {
    */
   public Site() {
     status = Status.activeAndConsistent;
-    listOfData = new LinkedList<Data>();
+    listOfData = new ArrayList<Data>();
     lockTable = new HashMap<String, Integer>();
     lastFailedTime = null;
   }
