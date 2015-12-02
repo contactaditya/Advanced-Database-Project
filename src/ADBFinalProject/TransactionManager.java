@@ -44,43 +44,60 @@ public class TransactionManager {
 	transactions.add(newTransaction);
   }
 	
-  public int read(Transaction transaction, String data) throws Exception{
-	  Data sitewithdata = null;
+  public void read(int time, int transactionNumber, String dataName) throws Exception{
+    Data sitewithdata = null;
+	int currentsite = 0;
+	int currentvalue = 0;
 		
-		for(int i =0; i < sites.length;i++)
-		{
-			try{
-			Site currentSite = sites[i];
-			for(Data d : currentSite.listOfData)
-			{
-		      if(d.name.equals(data))
-		      {
-		    	 sitewithdata = d; 
-		      }
-			}
-			}
-			catch(Exception e) {
-			System.out.println(e);	
-			}
-		}
+    for(int site =0; site < sites.length; site++) {
+	  try{
+	    Site currentSite = sites[site];
+		for(Data d : currentSite.listOfData) {
+		  if(d.name.equals(dataName)) {
+		  sitewithdata = d; 
+		  currentsite = site;
+		  }
+	    }
+	  } catch(Exception e) {
+	    System.out.println(e);	
+	  }
 		
-		if(transaction.transactionType.equals("readOnly")){
-			for(int i : sitewithdata.modifiedTimes)
-			{
-				if(i < transaction.arrivalTime) {
-					
-					return sitewithdata.values.get(i);
-				}
-			}
-			
+	  Transaction transaction = null;
+	  for(Transaction t : transactions) {
+        transaction = transactions.get(transactionNumber);
+	  }
+				
+      if(transaction.transactionType.equals("readonly")) {
+	    for(int times = sitewithdata.modifiedTimes.size()-1;times>=0;times--) {
+	      if(sitewithdata.modifiedTimes.get(times) < transaction.arrivalTime) {
+		    transaction.listOfSitesAccessed.push(currentsite); 
+		    transaction.listOfTimeAccessed.push(sitewithdata.modifiedTimes.get(times));
+		    currentvalue = times;
+		  }
+	    }
+      } else { 
+		sites[currentsite].lockTable.put(dataName, 1);
+		if(transaction.arrivalTime < sitewithdata.waitingQueue.get(currentsite)) {
+	    Operation operation = new Operation(transactionNumber,
+			transaction.transactionType,"read",dataName);
+		  bufferOfOperations.add(operation);
+		  sitewithdata.waitingQueue.add(transaction.transactionNumber);
+		} else {		  
+		  transaction.abortReason = "There is already a transaction in the waiting Queue";
 		}
-			
-			return 5;
-  }
-
-  public void read(int time, int transactionNumber, String dataName) {
+		  		    			 
+	  }
+      if(sites[currentsite].status.equals(Status.activeAndConsistent)){
+	    System.out.println(sitewithdata.values.get(currentvalue));
+	  } else if(sites[currentsite].status.equals(Status.activeNotConsistent)){
+	  }
+    }  
+  }  
+    		
+ /* public void read(int time, int transactionNumber, String dataName) {
 	read(time, transactionNumber, dataName, -1);
   }
+  */
 	
   public void read(int time, int transactionNumber, String dataName, int lastSiteChecked) {
 	System.out.println("Transaction " + transactionNumber + " wants to read " + dataName + " at time " + time);

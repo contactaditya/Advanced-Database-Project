@@ -27,7 +27,7 @@ public class Data
   boolean hasBeenWrittenToAfterRecovery;
 	
   // This queue will store the transaction number which are waiting to be executed.
-  Queue<Integer> waitingQueue;
+  ArrayList<Integer> waitingQueue;
 	
   // A constructor which will allow us to pass three values and set the default values.
   public Data(String dataName, int value, int modifiedTime, boolean isReplicated) {
@@ -38,7 +38,7 @@ public class Data
   public Data(String dataName, int value, int modifiedTime, boolean isTemporary, boolean isReplicated, boolean hasBeenWrittenToAfterRecovery) {
 	values = new ArrayList<Integer>();
 	modifiedTimes = new ArrayList<Integer>();
-	waitingQueue = new LinkedList<Integer>();
+	waitingQueue = new ArrayList<Integer>();
 		
 	name = dataName;
 	values.add(value);
