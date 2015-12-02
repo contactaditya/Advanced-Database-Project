@@ -29,6 +29,10 @@ public class TransactionManager {
 	sites[siteNumber].addData(dataToAdd);
 	sites[siteNumber].lockTable.put(dataName, 0);
   }
+
+  public void tryBufferedOperations() {
+    
+  }
   
   public void begin(int time, int transactionNumber) {
 	System.out.println("Transaction " + transactionNumber + " begins at time " + time);
@@ -117,7 +121,41 @@ public class TransactionManager {
 	
   public void write(int time, int transactionNumber, String dataName, int value) {	
 	System.out.println("Transaction " + transactionNumber + " wants to write " + value + " to " + dataName + " at time " + time);
-	
+	/**
+	 * for all sites S not failed
+	 *   if get lock on D successful
+	 *     continue;
+	 *   else
+	 *     if T.arrivalTime is earlier than all other transactions' in waiting queue for D
+	 *       checkForDeadlock();
+	 *       if possibleToContinueNow
+	 *         write value to data
+	 *       else
+	 *         get in queue for lock on D
+	 *         buffer operation in transaction manager
+	 *     else
+	 *       abort
+	 */
+	for (int site = 0; site < numberOfSites; site++) {
+	  if (!sites[site].status.equals(Status.failed)) {
+		if (sites[site].lockTable.get(dataName) != null && sites[site].lockTable.get(dataName) == 0) {
+	      // data is in table and not locked.
+		  // WRITE VALUE TO DATA
+		} else if (sites[site].lockTable.get(dataName) != null && sites[site].lockTable.get(dataName) != 0) {
+		  // data is in table and locked.
+		  /* if arrivalTime is earlier than all other transactions' arrival time in waiting queue for D
+		       checkForAndResolveDeadLock(); 
+		  
+			   if possible to continue
+			     WRITE VALUE TO DATA
+			   else
+			     get in queue for lock on D
+			     buffer operation in transaction manager
+			 else
+			   ABORT*/
+		}
+	  }
+	}
   }
 	
   public void dump() {

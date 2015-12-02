@@ -64,6 +64,7 @@ public class ReplicatedConcurrencyControlAndRecovery {
 		String command = commands[currentCommand];
 		String[] commandTokens = command.split("[,\\(\\)]");
 		String commandType = commandTokens[0];
+		// CHECK IF THE TRANSACTION HAS BEEN ABORTED IN APPROPRIATE OPERATIONS
 		switch(commandType) {
 		  case "begin":
 			String transactionName = commandTokens[1];
@@ -125,6 +126,7 @@ public class ReplicatedConcurrencyControlAndRecovery {
 			throw new Exception("Invalid command type!");
 		}
 	  }
+	  transactionManager.tryBufferedOperations();
 	  time++;
 	}
 
