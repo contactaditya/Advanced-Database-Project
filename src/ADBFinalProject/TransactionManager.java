@@ -27,6 +27,7 @@ public class TransactionManager {
   public void initializeDataAtSite(int siteNumber, String dataName, int dataValue, boolean isReplicated) {
 	Data dataToAdd = new Data(dataName, dataValue, 0, isReplicated);
 	sites[siteNumber].addData(dataToAdd);
+	sites[siteNumber].lockTable.put(dataName, 0);
   }
   
   public void begin(int time, int transactionNumber) {
