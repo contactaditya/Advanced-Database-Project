@@ -2,7 +2,6 @@ package ADBFinalProject;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
-import java.util.Queue;
 
 // Author : Aditya Gupta (ag4479)
 
@@ -26,7 +25,7 @@ public class Data
   // This boolean is used to indicate whether data has been written to a transaction site after recovery.
   boolean hasBeenWrittenToAfterRecovery;
 	
-  // This queue will store the transaction number which are waiting to be executed.
+  // This arraylist will store the transaction number which are waiting to be executed.
   ArrayList<Integer> waitingQueue;
 	
   // A constructor which will allow us to pass three values and set the default values.
