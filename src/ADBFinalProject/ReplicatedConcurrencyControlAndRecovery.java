@@ -126,7 +126,7 @@ public class ReplicatedConcurrencyControlAndRecovery {
 			throw new Exception("Invalid command type!");
 		}
 	  }
-	  transactionManager.tryBufferedOperations();
+	  transactionManager.tryBufferedOperations(time);
 	  time++;
 	}
 

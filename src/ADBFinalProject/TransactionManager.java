@@ -34,25 +34,26 @@ public class TransactionManager {
 
   public void tryBufferedOperations(int time) throws Exception {
 	  /**
-	   * Go Through the arraylist called buffer of operations and for each 
+	   * Go through the array list called buffer of operations and for each 
 	   * operation call appropriate method depending on the type of operation.
       **/
-	  
-	  for(Operation operation : bufferOfOperations) {
-		 if(operation.operationType == "read") {
-			int transactionNumber = operation.transactionNumber;
-			String dataName = operation.dataName;
-		    read(time,transactionNumber,dataName,false);
-		    bufferOfOperations.remove(operation);
-		 }
-		 else if(operation.operationType == "write") {
-			int transactionNumber = operation.transactionNumber;
-			String dataName = operation.dataName; 
-			int value = operation.valueToWrite;
-			write(time,transactionNumber,dataName,value); 
-		    bufferOfOperations.remove(operation);
-		 }
-	  }   
+	for(Operation operation : bufferOfOperations) {
+	  if (operation.operationType == "read") {
+		int transactionNumber = operation.transactionNumber;
+		String dataName = operation.dataName;
+		read(time, transactionNumber, dataName, false);
+		bufferOfOperations.remove(operation);
+	  }
+	  else if (operation.operationType == "write") {
+		int transactionNumber = operation.transactionNumber;
+		String dataName = operation.dataName; 
+		int value = operation.valueToWrite;
+		write(time, transactionNumber, dataName, value); 
+		bufferOfOperations.remove(operation);
+	  } else {
+		throw new Exception("Operation not handled!");
+	  }
+	}   
   }
   
   public void begin(int time, int transactionNumber) {
@@ -422,17 +423,13 @@ public class TransactionManager {
   }
 
   public void recover(int time, int siteNumber) {
-
 	/* set site's status to activeNotConsistent
 	 * set site's last recoverTime to time
-	*/
-	
-	Site currentSite = null;  
-	currentSite = sites[siteNumber - 1];
+	 */
+	Site currentSite = sites[siteNumber - 1];
 	currentSite.status = Status.activeNotConsistent;
 	currentSite.lastRecoverTime = time;
 	System.out.println("Site " + siteNumber + " recovered at time " + time);
-	
   }
   
   public void printSummary() throws Exception {
