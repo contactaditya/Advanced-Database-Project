@@ -232,6 +232,12 @@ public class TransactionManager {
 		  sites[site].lockData(dataName);
 		  sites[site].getData(dataName).waitingQueue.add(transactionNumber);
 		  sites[site].writeToData(time, dataName, value);
+		  for (int data = 0; data < sites[site].listOfData.size(); data++) {
+			if (sites[site].listOfData.get(data).name.equals(dataName)) {
+			  sites[site].listOfData.get(data).hasBeenWrittenToAfterRecovery = true;
+			}
+			break;
+		  }
 		  updateTransactionAccessInformation(transactionNumber, site, time);
 		  break;
 		} else if (sites[site].isDataLocked(dataName) == 1) {
