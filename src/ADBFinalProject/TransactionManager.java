@@ -61,21 +61,26 @@ public class TransactionManager {
 		for all sites not failed
 		  if site contains D
 		    if READONLY
-		      if (state is consistent || (state not consistent && D is not replicated))
+		      if (state is consistent || (state not consistent && D is not replicated) || DATA NEEDED HAS BEEN WRITTEN TO AFTER RECOVERY)
 		        find correct copy for D to read
 		          read D
 		    else READWRITE
-		      if D is not locked && (state is consistent || D is not replicated)
+		      if D is not locked && (state is consistent || D is not replicated || DATA NEEDED HAS BEEN WRITTEN TO AFTER RECOVERY)
 		        lock D
 		        read D
 		        return
 		      else
-		        if not wait && D is replicated
+		        if (not wait && D is replicated)
 		          try another site
 		        else if wait || D is non-replicated
 		          if T is older than R that locked D
 		            if T is older than Y the last transaction waiting for D
-		              get on waiting line for D
+		              if (D is non-replicated || D HAS BEEN WRITTEN TO AFTER RECOVER)
+		                get on waiting line for D
+		                BREAK
+		              ELSE IF (D IS REPLICATED && D HAS NOT BEEN WRITTEN TO AFTER RECOVERY)
+		                TRY ANOTHER SITE
+		                BREAK
 		          if D is non-replicated
 		            break
 		     
@@ -123,7 +128,8 @@ public class TransactionManager {
 	  // FIND THE CORRECT COPY OF VALUE TO READ
       if (transactionCopy.transactionType.equals("readonly")) {
         if (currentSite.status.equals(Status.activeAndConsistent) ||
-        	(currentSite.status.equals(Status.activeNotConsistent) && !dataToReadCopy.isReplicated)) {
+        	(currentSite.status.equals(Status.activeNotConsistent) && !dataToReadCopy.isReplicated)
+        	|| dataToReadCopy.hasBeenWrittenToAfterRecovery) {
           for (int times = dataToReadCopy.modifiedTimes.size() - 1 ; times >= 0 ; times--) {
       	    if (dataToReadCopy.modifiedTimes.get(times) < transactionCopy.arrivalTime) {
       		  if (!(times == dataToReadCopy.modifiedTimes.size() - 1 && dataToReadCopy.isTemporary)) {
@@ -131,7 +137,7 @@ public class TransactionManager {
       		    System.out.println("  > Transaction " + transactionNumber + " read " + dataName
       		    	+ " = " + dataToReadCopy.values.get(valueToReadIndex));
       		    updateTransactionAccessInformation(transactionNumber, site, time);
-      		    break;
+      		    return;
       		  }
       		}
       	  }
@@ -140,7 +146,8 @@ public class TransactionManager {
       } else {
     	// THE OPERATION COMES FROM A READWRITE TRANSACTION
     	if (sites[site].isDataLocked(dataName) == 0
-    	  && (currentSite.status.equals(Status.activeAndConsistent) || !dataToReadCopy.isReplicated)) {
+    	  && (currentSite.status.equals(Status.activeAndConsistent) || !dataToReadCopy.isReplicated
+    	  || dataToReadCopy.hasBeenWrittenToAfterRecovery)) {
     	  // DATA IS IN SITE AND NOT LOCKED, AND EITHER SITE CONSISTENT OR DATA REPLICATED
     	  sites[site].lockData(dataName);
           sites[site].getData(dataName).waitingQueue.add(transactionNumber);
@@ -156,28 +163,37 @@ public class TransactionManager {
     	  } else if (wait || !dataToReadCopy.isReplicated) {
     		if (transactionCopy.arrivalTime <
     	        getTransaction(dataToReadCopy.waitingQueue.get(0)).arrivalTime) {
-    		  if (dataToReadCopy.waitingQueue.isEmpty()) {
+    		  if (dataToReadCopy.waitingQueue.isEmpty() &&
+    		    (!dataToReadCopy.isReplicated || sites[site].status.equals(Status.activeAndConsistent) ||
+    		    (sites[site].status.equals(Status.activeNotConsistent) && dataToReadCopy.hasBeenWrittenToAfterRecovery))) {
     	    	sites[site].getData(dataName).waitingQueue.add(transactionNumber);
     	    	
     	    	Operation operationToBuffer = new Operation(transactionNumber,
     	    	    transactionCopy.transactionType, "read", dataName);
     	    	bufferOfOperations.add(operationToBuffer);
+    	    	return;
     	      } else {
     	    	int lastTransactionInQueue =
     	    	    dataToReadCopy.waitingQueue.get(dataToReadCopy.waitingQueue.size() - 1);
     	    	if (transactionCopy.arrivalTime <
     	    	    getTransaction(lastTransactionInQueue).arrivalTime) {
-    	    	  sites[site].getData(dataName).waitingQueue.add(transactionNumber);
-    	    	  
-    	    	  Operation operationToBuffer = new Operation(transactionNumber,
-    	    	      transactionCopy.transactionType, "read", dataName);
-    	    	  bufferOfOperations.add(operationToBuffer);
+    	    	  if (!dataToReadCopy.isReplicated || dataToReadCopy.hasBeenWrittenToAfterRecovery) {
+    	    		sites[site].getData(dataName).waitingQueue.add(transactionNumber);
+        	    	  
+        	    	Operation operationToBuffer = new Operation(transactionNumber,
+        	    	    transactionCopy.transactionType, "read", dataName);
+        	    	bufferOfOperations.add(operationToBuffer);
+        	    	return;
+    	    	  } else if (dataToReadCopy.isReplicated && !dataToReadCopy.hasBeenWrittenToAfterRecovery) {
+    	    		break;
+    	    	  }
     	    	} else {
     	    	  String abortReason = "transaction "
     	    	      + transactionNumber + " cannot get lock on " + dataName
     	    	      + " since transaction " + lastTransactionInQueue + " had a lock on "
     	    	      + dataName + " and is older.";
     	    	  abortTransaction(transactionNumber, abortReason);
+    	    	  return;
     	    	}
     	      }
     		}
@@ -250,7 +266,7 @@ public class TransactionManager {
 			  sites[site].getData(dataName).waitingQueue.add(transactionNumber);
 			  
 			  Operation operationToBuffer = new Operation(transactionNumber,
-	    	      currentTransaction.transactionType, "write", dataName);
+	    	      currentTransaction.transactionType, "write", dataName, value);
 	    	  bufferOfOperations.add(operationToBuffer);
 	    	  return;
 			} else {
@@ -261,7 +277,7 @@ public class TransactionManager {
                 sites[site].getData(dataName).waitingQueue.add(transactionNumber);
                 
                 Operation operationToBuffer = new Operation(transactionNumber,
-      	    	    currentTransaction.transactionType, "write", dataName);
+      	    	    currentTransaction.transactionType, "write", dataName, value);
       	    	bufferOfOperations.add(operationToBuffer);
       	    	return;
 			  } else {
@@ -378,6 +394,10 @@ public class TransactionManager {
     while (i.hasNext()) {
       value = (HashMap.Entry)i.next();
       value.setValue(0);
+    }
+    
+    for (int data = 0; data < sites[siteNumber - 1].listOfData.size(); data++) {
+      sites[siteNumber - 1].listOfData.get(data).hasBeenWrittenToAfterRecovery = false;
     }
   }
 
