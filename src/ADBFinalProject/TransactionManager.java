@@ -42,12 +42,12 @@ public class TransactionManager {
   }
   
   public void beginRO(int time, int transactionNumber) {
-	System.out.println("Transaction " + transactionNumber + " (readonly) begins at time " + time);
+	System.out.println("Transaction " + transactionNumber + " (read only) begins at time " + time);
 	String transactionType = "readonly";
 	Transaction newTransaction = new Transaction(transactionNumber, transactionType, time);
 	transactions.add(newTransaction);
   }
-  
+	
   public void read(int time, int transactionNumber, String dataName) throws Exception{
     Data sitewithdata = null;
 	int currentsite = 0;
@@ -97,27 +97,27 @@ public class TransactionManager {
 	  }
     }  
   }  
-	    		
-	 /* public void read(int time, int transactionNumber, String dataName) {
-		read(time, transactionNumber, dataName, -1);
+		    		
+  /* public void read(int time, int transactionNumber, String dataName) {
+	read(time, transactionNumber, dataName, -1);
+  }
+  */
+	
+  public void read(int time, int transactionNumber, String dataName, int lastSiteChecked) {
+	System.out.println("Transaction " + transactionNumber + " wants to read " + dataName + " at time " + time);
+	
+	// Find a site that contains D
+	int currentSiteToCheck = lastSiteChecked++;
+	if (currentSiteToCheck == numberOfSites) {
+	  // DATA NOT FOUND IN ANY SITE
+	}
+	for (int site = 0; site < numberOfSites; site++) {
+	  Site currentSite = sites[site];
+	  for (Data d : currentSite.listOfData) {
+		if (d.name.equals(dataName));
 	  }
-	  */
-		
-	  public void read(int time, int transactionNumber, String dataName, int lastSiteChecked) {
-		System.out.println("Transaction " + transactionNumber + " wants to read " + dataName + " at time " + time);
-		
-		// Find a site that contains D
-		int currentSiteToCheck = lastSiteChecked++;
-		if (currentSiteToCheck == numberOfSites) {
-		  // DATA NOT FOUND IN ANY SITE
-		}
-		for (int site = 0; site < numberOfSites; site++) {
-		  Site currentSite = sites[site];
-		  for (Data d : currentSite.listOfData) {
-			if (d.name.equals(dataName));
-		  }
-		}
-	  }
+	}
+  }
 	
   public void write(int time, int transactionNumber, String dataName, int value) throws Exception {	
 	System.out.println("Transaction " + transactionNumber + " wants to write " + value + " to " + dataName + " at time " + time);
@@ -193,28 +193,30 @@ public class TransactionManager {
   }
 	
   public void dump() {
-	System.out.println("DUMP called");
-	
+	//System.out.println("DUMP called");
+	System.out.println("\nValue of Data at Sites");
 	for (int site = 0; site < numberOfSites; site++) {
 	  dump(site, null);
 	}
   }
   
   public void dump(int siteNumber) {
-	System.out.println("DUMP called for site " + siteNumber);
+	//System.out.println("DUMP called for site " + siteNumber);
+	System.out.println("\nValue of Data at Site " + siteNumber);
 	dump(siteNumber, null);
   }
   
   public void dump(String dataName) {
-	System.out.println("DUMP called for data " + dataName);
+	//System.out.println("DUMP called for data " + dataName);
+	System.out.println("\nValue of " + dataName + " at All Sites");
 	for (int site = 0; site < numberOfSites; site++) {
 	  dump(site, dataName); 
 	}
   }
 	
   public void dump(int siteNumber, String key) {
-	System.out.println("Site " + siteNumber);
-	for (int data = 0; data < sites[siteNumber].listOfData.size(); data++) {
+	System.out.println("<Site " + siteNumber + ">");
+	for (int data = sites[siteNumber].listOfData.size() - 1; data > 0 ; data--) {
 	  String currentDataName = sites[siteNumber].listOfData.get(data).name;
 	  if (key == null || currentDataName.equals(key)) {
 		System.out.println("  " + currentDataName);
@@ -229,14 +231,27 @@ public class TransactionManager {
   
   public void end(int time, int transactionNumber) {
 	System.out.println("Transaction " + transactionNumber + " ends at time " + time);
+	// REPORT WHETHER TRANSACTION CAN COMMIT
+	/* for all sites accessed
+	 *   if the site is down || siteLastRecovery == null || lastAccessTime < siteLastRecoveryTime
+	 *     set transaction.commitStatus to fail
+	 *     set transaction.abortReason to site x has failed since last access
+	 *     break 
+	 */
   }
 	
   public void fail(int time, int siteNumber) {
 	System.out.println("Site " + siteNumber + " failed at time " + time);
+	/* set site's status to fail
+	 * set all values in lockTable to 0 (empty)
+	 */
   }
 	
   public void recover(int time, int siteNumber) {
 	System.out.println("Site " + siteNumber + " recovered at time " + time);
+	/* set site's status to activeNotConsistent
+	 * set site's last recoverTime to time
+	 */
   }
   
   public void printSummary() throws Exception {
@@ -253,7 +268,7 @@ public class TransactionManager {
 	  }
 	}
 	
-	System.out.println(bufferOfOperations.size());
+	System.out.println("\nOperations in operations buffer: " + bufferOfOperations.size());
   }
   
   public Transaction getTransaction(int transactionNumber) {

@@ -14,7 +14,7 @@ public class Site {
   public Status status;
   public ArrayList<Data> listOfData;
   public HashMap<String, Integer> lockTable;
-  public Integer lastFailedTime;
+  public Integer lastRecoverTime;
 
   /***
    * Create a new site with default values.
@@ -23,7 +23,7 @@ public class Site {
     status = Status.activeAndConsistent;
     listOfData = new ArrayList<Data>();
     lockTable = new HashMap<String, Integer>();
-    lastFailedTime = null;
+    lastRecoverTime = null;
   }
   
   public void addData(Data dataToAdd) {
