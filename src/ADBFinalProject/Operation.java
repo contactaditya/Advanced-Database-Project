@@ -4,6 +4,7 @@ package ADBFinalProject;
  * A database operation in the simulation.
  * @author Shikuan Huang
  */
+
 public class Operation {
   public int transactionNumber;
   public String transactionType;
@@ -20,6 +21,7 @@ public class Operation {
    * @param opType the type of operation.
    * @param dataToOperateOn the name of the data to read from or write to.
    */
+  
   public Operation(int transactionNum, String transType, String opType, String dataToOperateOn) {
 	this(transactionNum, transType, opType, dataToOperateOn, null);
   }
@@ -33,6 +35,7 @@ public class Operation {
    * @param dataToOperateOn the name of the data
    * @param value the value to write to the data specified.
    */
+  
   public Operation(int transactionNum, String transType, String opType, String dataToOperateOn, Integer value) {
     transactionNumber = transactionNum;
     transactionType = transType;
