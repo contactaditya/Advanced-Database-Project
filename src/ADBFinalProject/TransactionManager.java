@@ -376,10 +376,17 @@ public class TransactionManager {
   }
 
   public void recover(int time, int siteNumber) {
-	System.out.println("Site " + siteNumber + " recovered at time " + time);
+
 	/* set site's status to activeNotConsistent
 	 * set site's last recoverTime to time
 	 */
+	
+	Site currentSite = null;  
+	currentSite = sites[siteNumber - 1];
+	currentSite.status = Status.activeNotConsistent;
+	currentSite.lastRecoverTime = time;
+	System.out.println("Site " + siteNumber + " recovered at time " + time);
+	
   }
   
   public void printSummary() throws Exception {
