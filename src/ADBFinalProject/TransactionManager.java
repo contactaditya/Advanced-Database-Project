@@ -32,8 +32,27 @@ public class TransactionManager {
 	sites[siteNumber].lockTable.put(dataName, 0);
   }
 
-  public void tryBufferedOperations() {
-    
+  public void tryBufferedOperations(int time) throws Exception {
+	  /**
+	   * Go Through the arraylist called buffer of operations and for each 
+	   * operation call appropriate method depending on the type of operation.
+      **/
+	  
+	  for(Operation operation : bufferOfOperations) {
+		 if(operation.operationType == "read") {
+			int transactionNumber = operation.transactionNumber;
+			String dataName = operation.dataName;
+		    read(time,transactionNumber,dataName,false);
+		    bufferOfOperations.remove(operation);
+		 }
+		 else if(operation.operationType == "write") {
+			int transactionNumber = operation.transactionNumber;
+			String dataName = operation.dataName; 
+			int value = operation.valueToWrite;
+			write(time,transactionNumber,dataName,value); 
+		    bufferOfOperations.remove(operation);
+		 }
+	  }   
   }
   
   public void begin(int time, int transactionNumber) {
@@ -368,7 +387,7 @@ public class TransactionManager {
   }
 	
   public void fail(int time, int siteNumber) {
-	System.out.println("Site " + siteNumber + " failed at time " + time);
+
 	/* set site's status to fail
 	 * set all values in lockTable to 0 (empty)
 	 */
@@ -378,6 +397,7 @@ public class TransactionManager {
     while (i.hasNext()) {
       value = (HashMap.Entry)i.next();
       value.setValue(0);
+  	System.out.println("Site " + siteNumber + " failed at time " + time);
     }
   }
 
@@ -385,7 +405,7 @@ public class TransactionManager {
 
 	/* set site's status to activeNotConsistent
 	 * set site's last recoverTime to time
-	 */
+	*/
 	
 	Site currentSite = null;  
 	currentSite = sites[siteNumber - 1];
