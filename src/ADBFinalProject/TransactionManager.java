@@ -47,7 +47,7 @@ public class TransactionManager {
 	Transaction newTransaction = new Transaction(transactionNumber, transactionType, time);
 	transactions.add(newTransaction);
   }
-	
+  
   public void read(int time, int transactionNumber, String dataName) throws Exception{
     Data sitewithdata = null;
 	int currentsite = 0;
@@ -74,8 +74,8 @@ public class TransactionManager {
       if(transaction.transactionType.equals("readonly")) {
 	    for(int times = sitewithdata.modifiedTimes.size()-1;times>=0;times--) {
 	      if(sitewithdata.modifiedTimes.get(times) < transaction.arrivalTime) {
-		    transaction.listOfSitesAccessed.push(currentsite); 
-		    transaction.listOfTimeAccessed.push(sitewithdata.modifiedTimes.get(times));
+		    transaction.listOfSitesAccessed.add(currentsite); 
+		    transaction.listOfTimeAccessed.add(sitewithdata.modifiedTimes.get(times));
 		    currentvalue = times;
 		  }
 	    }
@@ -97,62 +97,96 @@ public class TransactionManager {
 	  }
     }  
   }  
-    		
- /* public void read(int time, int transactionNumber, String dataName) {
-	read(time, transactionNumber, dataName, -1);
-  }
-  */
-	
-  public void read(int time, int transactionNumber, String dataName, int lastSiteChecked) {
-	System.out.println("Transaction " + transactionNumber + " wants to read " + dataName + " at time " + time);
-	
-	// Find a site that contains D
-	int currentSiteToCheck = lastSiteChecked++;
-	if (currentSiteToCheck == numberOfSites) {
-	  // DATA NOT FOUND IN ANY SITE
-	}
-	for (int site = 0; site < numberOfSites; site++) {
-	  Site currentSite = sites[site];
-	  for (Data d : currentSite.listOfData) {
-		if (d.name.equals(dataName));
+	    		
+	 /* public void read(int time, int transactionNumber, String dataName) {
+		read(time, transactionNumber, dataName, -1);
 	  }
-	}
-  }
+	  */
+		
+	  public void read(int time, int transactionNumber, String dataName, int lastSiteChecked) {
+		System.out.println("Transaction " + transactionNumber + " wants to read " + dataName + " at time " + time);
+		
+		// Find a site that contains D
+		int currentSiteToCheck = lastSiteChecked++;
+		if (currentSiteToCheck == numberOfSites) {
+		  // DATA NOT FOUND IN ANY SITE
+		}
+		for (int site = 0; site < numberOfSites; site++) {
+		  Site currentSite = sites[site];
+		  for (Data d : currentSite.listOfData) {
+			if (d.name.equals(dataName));
+		  }
+		}
+	  }
 	
-  public void write(int time, int transactionNumber, String dataName, int value) {	
+  public void write(int time, int transactionNumber, String dataName, int value) throws Exception {	
 	System.out.println("Transaction " + transactionNumber + " wants to write " + value + " to " + dataName + " at time " + time);
 	/**
 	 * for all sites S not failed
 	 *   if get lock on D successful
-	 *     continue;
-	 *   else
-	 *     if T.arrivalTime is earlier than all other transactions' in waiting queue for D
-	 *       checkForDeadlock();
-	 *       if possibleToContinueNow
-	 *         write value to data
+	 *     get lock on data
+	 *     write value to data
+	 *   else if D is locked
+	 *     if T.arrivalTime is earlier than transaction S that holds lock on D's arrival time
+	 *       if (T.arrivalTime is earlier than last item in D's queue
+	 *         get on D's queue
 	 *       else
-	 *         get in queue for lock on D
-	 *         buffer operation in transaction manager
+	 *         abort
 	 *     else
 	 *       abort
 	 */
 	for (int site = 0; site < numberOfSites; site++) {
+	  // FOR EACH SITE THAT HAS NOT FAILED
 	  if (!sites[site].status.equals(Status.failed)) {
-		if (sites[site].lockTable.get(dataName) != null && sites[site].lockTable.get(dataName) == 0) {
-	      // data is in table and not locked.
-		  // WRITE VALUE TO DATA
-		} else if (sites[site].lockTable.get(dataName) != null && sites[site].lockTable.get(dataName) != 0) {
-		  // data is in table and locked.
-		  /* if arrivalTime is earlier than all other transactions' arrival time in waiting queue for D
-		       checkForAndResolveDeadLock(); 
-		  
-			   if possible to continue
-			     WRITE VALUE TO DATA
-			   else
-			     get in queue for lock on D
-			     buffer operation in transaction manager
-			 else
-			   ABORT*/
+		if (sites[site].isDataLocked(dataName) == 0) {
+	      // DATA IS IN TABLE AND NOT LOCKED.
+		  sites[site].lockData(dataName);
+		  sites[site].getData(dataName).waitingQueue.add(transactionNumber);
+		  sites[site].writeToData(time, dataName, value);
+		  updateTransactionAccessInformation(transactionNumber, site, time);
+		  break;
+		} else if (sites[site].isDataLocked(dataName) == 1) {
+		  // DATA IS IN TABLE AND LOCKED.
+		  Data dataToWriteToCopy = sites[site].getData(dataName);
+		  Transaction currentTransaction = getTransaction(transactionNumber);
+		  if (currentTransaction.arrivalTime < 
+		      getTransaction(dataToWriteToCopy.waitingQueue.get(0)).arrivalTime) {
+			if (dataToWriteToCopy.waitingQueue.isEmpty()) {
+			  sites[site].getData(dataName).waitingQueue.add(transactionNumber);
+			  
+			  Operation operationToBuffer = new Operation(transactionNumber,
+	    	      currentTransaction.transactionType, "write", dataName);
+	    	  bufferOfOperations.add(operationToBuffer);
+	    	  return;
+			} else {
+			  int lastTransactionInQueue =
+			      dataToWriteToCopy.waitingQueue.get(dataToWriteToCopy.waitingQueue.size() - 1);
+			  if (getTransaction(transactionNumber).arrivalTime
+			      < getTransaction(lastTransactionInQueue).arrivalTime) {
+                sites[site].getData(dataName).waitingQueue.add(transactionNumber);
+                
+                Operation operationToBuffer = new Operation(transactionNumber,
+      	    	    currentTransaction.transactionType, "write", dataName);
+      	    	bufferOfOperations.add(operationToBuffer);
+      	    	return;
+			  } else {
+				String abortReason = "transaction "
+				    + transactionNumber + " cannot get lock on " + dataName
+				    + " since transaction " + lastTransactionInQueue + " had a lock on "
+				    + dataName + " and is older.";
+				abortTransaction(transactionNumber, abortReason);
+				return;
+			  }
+			}
+		  }
+		  else {
+			String abortReason = "transaction "
+				+ transactionNumber + " cannot get a lock on " + dataName
+				+ " since transaction " + dataToWriteToCopy.waitingQueue.get(0) + " had a lock on "
+				+ dataName + " and is older.";
+		    abortTransaction(transactionNumber, abortReason);
+		    return;
+		  }
 		}
 	  }
 	}
@@ -205,17 +239,52 @@ public class TransactionManager {
 	System.out.println("Site " + siteNumber + " recovered at time " + time);
   }
   
-  public void printSummary() {
+  public void printSummary() throws Exception {
 	// Output whether each transaction committed successfully or failed to commit.
 	System.out.println("Commit Summary");
 	for (Transaction transaction : transactions) {
-	  if (transaction.commitSuccess) {
+	  if (transaction.commitSuccess == null) {
+		//throw new Exception("A transaction has not committed successfully or failed!");
+	  } else if (transaction.commitSuccess) {
 	    System.out.println("Transaction " + transaction.transactionNumber + " committed successfully.");
 	  } else {
 		System.out.println("Transaction " + transaction.transactionNumber + " aborted because " +
 	        transaction.abortReason);
 	  }
 	}
+	
+	System.out.println(bufferOfOperations.size());
+  }
+  
+  public Transaction getTransaction(int transactionNumber) {
+    for (Transaction transaction : transactions) {
+      if (transaction.transactionNumber == transactionNumber) {
+        return transaction;
+      }
+    }
+    return null;
+  }
+  
+  public boolean abortTransaction(int transactionNumber, String reason) {
+    for (Transaction transaction : transactions) {
+      if (transaction.transactionNumber == transactionNumber) {
+    	transaction.commitSuccess = false;
+    	transaction.abortReason = reason;
+    	return true;
+      }
+    }
+    return false;
+  }
+  
+  public void updateTransactionAccessInformation(int transactionNumber,
+      int siteNumber, int accessTime) {
+    for (Transaction transaction : transactions) {
+      if (transaction.transactionNumber == transactionNumber) {
+    	transaction.listOfSitesAccessed.add(siteNumber);
+    	transaction.listOfTimeAccessed.add(accessTime);
+    	return;
+      }
+    }
   }
 }
 	

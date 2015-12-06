@@ -1,6 +1,6 @@
 package ADBFinalProject;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
 
 /***
  * A transaction in the simulation.
@@ -11,9 +11,9 @@ public class Transaction {
   public String transactionType;
   public int arrivalTime;
   public Boolean commitSuccess;
-  public LinkedList<Integer> listOfData;
-  public LinkedList<Integer> listOfTimeAccessed;
-  public LinkedList<Integer> listOfSitesAccessed;
+  public ArrayList<Integer> listOfData;
+  public ArrayList<Integer> listOfTimeAccessed;
+  public ArrayList<Integer> listOfSitesAccessed;
   public String abortReason;
   
   /***
@@ -27,9 +27,9 @@ public class Transaction {
 	transactionType = type;
 	arrivalTime = arrival;
 	commitSuccess = null;
-	listOfData = new LinkedList<Integer>();
-	listOfTimeAccessed = new LinkedList<Integer>();
-	listOfSitesAccessed = new LinkedList<Integer>();
+	listOfData = new ArrayList<Integer>();
+	listOfTimeAccessed = new ArrayList<Integer>();
+	listOfSitesAccessed = new ArrayList<Integer>();
 	abortReason = null;
   }
 }

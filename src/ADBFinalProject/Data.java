@@ -46,4 +46,10 @@ public class Data
 	this.isReplicated = isReplicated;
 	this.hasBeenWrittenToAfterRecovery = hasBeenWrittenToAfterRecovery;
   }
+  
+  public void write(int modifiedTime, int value) {
+	values.add(value);
+	modifiedTimes.add(modifiedTime);
+	isTemporary = true;
+  }
 }
