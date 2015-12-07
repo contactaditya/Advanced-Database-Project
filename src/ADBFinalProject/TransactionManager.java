@@ -181,19 +181,19 @@ public class TransactionManager {
 	    return;
       } else {
     	// THE OPERATION COMES FROM A READWRITE TRANSACTION
-    	if (sites[site].haveLock(transactionNumber, dataName) || (sites[site].isDataLocked(dataName) == 0
+    	if (sites[site].haveLock(transactionNumber, dataName) || (sites[site].isDataLocked(dataName) < 2
     	  && (currentSite.status.equals(Status.activeAndConsistent) || !dataToReadCopy.isReplicated
     	  || dataToReadCopy.hasBeenWrittenToAfterRecovery))) {
-    	  // DATA IS IN SITE AND NOT LOCKED (OR ALREADY HOLD LOCK), AND EITHER THE SITE IS CONSISTENT OR DATA REPLICATED
-    	  sites[site].lockData(dataName);
+    	  // DATA IS IN SITE AND NOT LOCKED (OR ALREADY HOLD LOCK OR IS READ LOCKED), AND EITHER THE SITE IS CONSISTENT OR DATA REPLICATED
+    	  sites[site].lockData(dataName, "read");
           sites[site].getData(dataName).waitingQueue.add(transactionNumber);
           // ASSUMES THAT IF THERES NO LOCK THEN THERE IS NO TEMPORARY WRITE
           System.out.println("  > Transaction " + transactionNumber + " read " + dataName
         	  + " = " + dataToReadCopy.values.get(dataToReadCopy.values.size() - 1));
           updateTransactionAccessInformation(transactionNumber, site, time);
           return;
-    	} else if (sites[site].isDataLocked(dataName) == 1) {
-    	  // DATA IS IN SITE AND LOCKED
+    	} else if (sites[site].isDataLocked(dataName) > 1) {
+    	  // DATA IS IN SITE AND WRITE LOCKED
     	  if (!wait && dataToReadCopy.isReplicated) {
     		break;
     	  } else if (wait || !dataToReadCopy.isReplicated) {
@@ -240,6 +240,7 @@ public class TransactionManager {
     	  }
     	} else {
     	  // DATA IS NOT IN SITE. SHOULD NOT HAPPEN. DO NOTHING.
+    	  throw new Exception("Read is in an invalid state!");
     	}   			 
 	  }
     }
@@ -284,7 +285,7 @@ public class TransactionManager {
 	  if (!sites[site].status.equals(Status.failed)) {
 		if (sites[site].haveLock(transactionNumber, dataName) || sites[site].isDataLocked(dataName) == 0) {
 	      // DATA IS IN TABLE AND NOT LOCKED (OR ALREADY HAVE LOCK).
-		  sites[site].lockData(dataName);
+		  sites[site].lockData(dataName, "write");
 		  sites[site].getData(dataName).waitingQueue.add(transactionNumber);
 		  sites[site].writeToData(time, dataName, value);
 		  for (int data = 0; data < sites[site].listOfData.size(); data++) {
@@ -294,8 +295,8 @@ public class TransactionManager {
 			break;
 		  }
 		  updateTransactionAccessInformation(transactionNumber, site, time);
-		  break;
-		} else if (sites[site].isDataLocked(dataName) == 1) {
+		  continue;
+		} else if (sites[site].isDataLocked(dataName) > 0) {
 		  // DATA IS IN TABLE AND LOCKED.
 		  Data dataToWriteToCopy = sites[site].getData(dataName);
 		  Transaction currentTransaction = getTransaction(transactionNumber);
@@ -397,6 +398,8 @@ public class TransactionManager {
 	ArrayList<Transaction.AccessPair> accessInformation =
 	    getTransaction(transactionNumber).getAccessInformation();
 	
+	//System.out.println("  accessInformation.size() = " + accessInformation.size());
+	
 	for (int record = 0; record < accessInformation.size(); record++) {
 	  int siteAccessed = accessInformation.get(record).site;
 	  int timeAccessed = accessInformation.get(record).accessTime;
@@ -406,7 +409,7 @@ public class TransactionManager {
 		for (Transaction transaction : transactions) {
 	      if (transaction.transactionNumber == transactionNumber) {
 	    	transaction.commitSuccess = false;
-	    	transaction.abortReason = " one or more of the sites accessed has failed since last access.";
+	    	transaction.abortReason = "one or more of the sites accessed have failed since last access.";
 	    	cleanUpAbortedTransaction(transactionNumber);
 	    	System.out.println("  > Transaction " + transactionNumber + " failed to commit.");
 	    	return;
@@ -456,7 +459,7 @@ public class TransactionManager {
   
   public void printSummary() throws Exception {
 	// Output whether each transaction committed successfully or failed to commit.
-	System.out.println("Commit Summary");
+	System.out.println("\nCommit Summary");
 	for (Transaction transaction : transactions) {
 	  if (transaction.commitSuccess == null) {
 		//throw new Exception("A transaction has not committed successfully or failed!");

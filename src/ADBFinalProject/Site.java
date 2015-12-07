@@ -30,19 +30,28 @@ public class Site {
 	listOfData.add(dataToAdd);
   }
   
-  public boolean lockData(String dataName) throws Exception {
+  public boolean lockData(String dataName, String lockType) throws Exception {
 	if (isDataLocked(dataName) == 1) {
       return false;
 	}
-	lockTable.put(dataName, 1);
+	if (lockType == "read") {
+      lockTable.put(dataName, 1);	
+	} else if (lockType == "write") {
+	  lockTable.put(dataName, 2);
+	} else {
+	  throw new Exception("Invalid lock type!");
+	}
+	
 	return true;
   }
   
   public int isDataLocked(String dataName) throws Exception {
 	if (lockTable.get(dataName) != null && lockTable.get(dataName) == 0) {
 	  return 0;
-	} else if (lockTable.get(dataName) != null && lockTable.get(dataName) != 0) {
+	} else if (lockTable.get(dataName) != null && lockTable.get(dataName) == 1) {
 	  return 1;
+	} else if (lockTable.get(dataName) != null && lockTable.get(dataName) == 2) {
+	  return 2;
 	} else if (lockTable.get(dataName) == null) {
 	  return -1;
 	} else {
