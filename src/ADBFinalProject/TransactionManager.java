@@ -77,6 +77,9 @@ public class TransactionManager {
   }
   
   public void read(int time, int transactionNumber, String dataName) throws Exception {
+	if (isTransactionCommittedOrAborted(transactionNumber)) {
+	  return;
+	}
 	read(time, transactionNumber, dataName, false);
   }
 	
@@ -118,6 +121,9 @@ public class TransactionManager {
 		else
 		  abort
 	 */
+	if (isTransactionCommittedOrAborted(transactionNumber)) {
+      return;
+	}
 	System.out.println("Transaction " + transactionNumber + " wants to read " + dataName + " at time " + time + ".");
 	Transaction transactionCopy = getTransaction(transactionNumber);
 	Site currentSite = null;
@@ -142,6 +148,9 @@ public class TransactionManager {
 		    dataToReadCopy = data;
 		    siteContainsData = true;
 		    foundDataInSearch = true;
+		    /*if (!siteToSearch.status.equals(Status.failed)) {
+		      foundDataInSearch = true;
+		    }*/
 		  }
 	    }
 		if (!siteContainsData) {
@@ -172,14 +181,14 @@ public class TransactionManager {
 	    return;
       } else {
     	// THE OPERATION COMES FROM A READWRITE TRANSACTION
-    	if (sites[site].isDataLocked(dataName) == 0
+    	if (sites[site].haveLock(transactionNumber, dataName) || (sites[site].isDataLocked(dataName) == 0
     	  && (currentSite.status.equals(Status.activeAndConsistent) || !dataToReadCopy.isReplicated
-    	  || dataToReadCopy.hasBeenWrittenToAfterRecovery)) {
-    	  // DATA IS IN SITE AND NOT LOCKED, AND EITHER SITE CONSISTENT OR DATA REPLICATED
+    	  || dataToReadCopy.hasBeenWrittenToAfterRecovery))) {
+    	  // DATA IS IN SITE AND NOT LOCKED (OR ALREADY HOLD LOCK), AND EITHER THE SITE IS CONSISTENT OR DATA REPLICATED
     	  sites[site].lockData(dataName);
           sites[site].getData(dataName).waitingQueue.add(transactionNumber);
           // ASSUMES THAT IF THERES NO LOCK THEN THERE IS NO TEMPORARY WRITE
-          System.out.println("  > Transaction + " + transactionNumber + " read " + dataName
+          System.out.println("  > Transaction " + transactionNumber + " read " + dataName
         	  + " = " + dataToReadCopy.values.get(dataToReadCopy.values.size() - 1));
           updateTransactionAccessInformation(transactionNumber, site, time);
           return;
@@ -244,14 +253,17 @@ public class TransactionManager {
       read(time, transactionNumber, dataName, true);
     } else {
       // CANNOT GET IN QUEUE FOR DATA
-      String abortReason = " transaction " + transactionNumber + " cannot get a lock on "
+      String abortReason = "transaction " + transactionNumber + " cannot get a lock on "
           + dataName + " since " + dataName 
           + " at all sites is held or is waiting on by older transactions.";
 	  abortTransaction(transactionNumber, abortReason);
     }
   }
-	
-  public void write(int time, int transactionNumber, String dataName, int value) throws Exception {	
+
+  public void write(int time, int transactionNumber, String dataName, int value) throws Exception {
+	if (isTransactionCommittedOrAborted(transactionNumber)) {
+	  return;
+	}
 	System.out.println("Transaction " + transactionNumber + " wants to write " + value + " to " + dataName + " at time " + time + ".");
 	/**
 	 * for all sites S not failed
@@ -270,8 +282,8 @@ public class TransactionManager {
 	for (int site = 0; site < numberOfSites; site++) {
 	  // FOR EACH SITE THAT HAS NOT FAILED
 	  if (!sites[site].status.equals(Status.failed)) {
-		if (sites[site].isDataLocked(dataName) == 0) {
-	      // DATA IS IN TABLE AND NOT LOCKED.
+		if (sites[site].haveLock(transactionNumber, dataName) || sites[site].isDataLocked(dataName) == 0) {
+	      // DATA IS IN TABLE AND NOT LOCKED (OR ALREADY HAVE LOCK).
 		  sites[site].lockData(dataName);
 		  sites[site].getData(dataName).waitingQueue.add(transactionNumber);
 		  sites[site].writeToData(time, dataName, value);
@@ -368,7 +380,7 @@ public class TransactionManager {
   }
   
   public void end(int time, int transactionNumber) {
-	System.out.println("Transaction " + (transactionNumber + 1) + " wants to end at time " + time + ".");
+	System.out.println("Transaction " + transactionNumber + " wants to end at time " + time + ".");
 	if (getTransaction(transactionNumber).commitSuccess != null
 	    && getTransaction(transactionNumber).commitSuccess == false) {
       System.out.println("  > Transaction " + transactionNumber + " failed to commit.");
@@ -395,6 +407,7 @@ public class TransactionManager {
 	      if (transaction.transactionNumber == transactionNumber) {
 	    	transaction.commitSuccess = false;
 	    	transaction.abortReason = " one or more of the sites accessed has failed since last access.";
+	    	cleanUpAbortedTransaction(transactionNumber);
 	    	System.out.println("  > Transaction " + transactionNumber + " failed to commit.");
 	    	return;
 	      }
@@ -404,24 +417,26 @@ public class TransactionManager {
 	for (Transaction transaction : transactions) {
 	  if (transaction.transactionNumber == transactionNumber) {
 		transaction.commitSuccess = true;
+		finalizeCommittedTransaction(transactionNumber);
 		System.out.println("  > Transaction " + transactionNumber + " comitted successfully.");
 		return;
 	  }
 	}
+	
+	// REMOVE TRANSACTION FROM DATA QUEUESS' 0th POSITION AND UNLOCK ALL LOCKS HELD (MOVE THE NEXT TRANSACTION IN QUEUE OR NOT?)
   }
 	
   public void fail(int time, int siteNumber) {
-
 	/* set site's status to fail
 	 * set all values in lockTable to 0 (empty)
 	 */
+	System.out.println("Site " + siteNumber + " failed at time " + time);
     sites[siteNumber - 1].status = Status.failed;
     Iterator i = sites[siteNumber - 1].lockTable.entrySet().iterator();
     HashMap.Entry value;
     while (i.hasNext()) {
       value = (HashMap.Entry)i.next();
       value.setValue(0);
-  	System.out.println("Site " + siteNumber + " failed at time " + time);
     }
     
     for (int data = 0; data < sites[siteNumber - 1].listOfData.size(); data++) {
@@ -470,10 +485,64 @@ public class TransactionManager {
       if (transaction.transactionNumber == transactionNumber) {
     	transaction.commitSuccess = false;
     	transaction.abortReason = reason;
+    	
+    	cleanUpAbortedTransaction(transactionNumber);
+    	
     	return true;
       }
     }
     return false;
+  }
+  
+  public void cleanUpAbortedTransaction(int transactionNumber) {
+	// clear bufferOfOperations with transactionNumber
+  	for (int operation = bufferOfOperations.size() - 1; operation > 0; operation--) {
+  	  if (bufferOfOperations.get(operation).transactionNumber == transactionNumber) {
+  		bufferOfOperations.remove(operation);
+  	  }
+  	}
+  	
+  	// free locks held by transaction
+  	// erase temporary values written
+  	for (int site = 0; site < numberOfSites; site++) {
+  	  for (int data = 0; data < sites[site].listOfData.size(); data++) {
+  		if (!sites[site].listOfData.get(data).waitingQueue.isEmpty()
+  		    && sites[site].listOfData.get(data).waitingQueue.get(0) == transactionNumber) {
+  		  // FREE LOCK, ERASE TEMP VALUES, REMOVE FROM FRONT OF QUEUE
+  		  Data currentData = sites[site].listOfData.get(data);
+  		  sites[site].lockTable.put(currentData.name, 0);
+  		  if (sites[site].listOfData.get(data).isTemporary) {
+  			sites[site].listOfData.get(data).values.remove(currentData.values.size() - 1);
+  			sites[site].listOfData.get(data).modifiedTimes.remove(currentData.modifiedTimes.size() - 1);
+  		  }
+  		  sites[site].listOfData.get(data).waitingQueue.remove(0);
+  		  // THE NEXT TRANSACTION IN LINE MOVES UP AND NOW HOLDS THE LOCK
+  		}
+  	  }
+  	}
+  }
+  
+  public void finalizeCommittedTransaction(int transactionNumber) {
+	// FREE LOCKS
+	// MAKE WRITTEN VALUES PERMANENT
+	// REMOVE FROM WAITING QUEUE
+	if (getTransaction(transactionNumber).transactionType == "readonly") {
+	  return;
+	}
+	for (int site = 0; site < numberOfSites; site++) {
+	  for (int data = 0; data < sites[site].listOfData.size(); data++) {
+		if (!sites[site].listOfData.get(data).waitingQueue.isEmpty()
+		    && sites[site].listOfData.get(data).waitingQueue.get(0) == transactionNumber) {
+		  Data currentData = sites[site].listOfData.get(data);
+		  sites[site].lockTable.put(currentData.name, 0);
+		  if (sites[site].listOfData.get(data).isTemporary) {
+			sites[site].listOfData.get(data).isTemporary = false;
+		  }
+		  sites[site].listOfData.get(data).waitingQueue.remove(0);
+		  // THE NEXT TRANSACTION IN LINE MOVES UP AND NOW HOLDS THE LOCK
+		}
+	  }
+	}
   }
   
   public void updateTransactionAccessInformation(int transactionNumber,
@@ -485,6 +554,19 @@ public class TransactionManager {
     	return;
       }
     }
+  }
+  
+  public boolean isTransactionCommittedOrAborted(int transactionNumber) throws Exception {
+	for (Transaction transaction : transactions) {
+	  if (transaction.transactionNumber == transactionNumber) {
+		if (transaction.commitSuccess == null) {
+	      return false;
+		} else {
+		  return true;
+		}
+	  }
+	}
+	throw new Exception("Operation from non-existent transaction: " + transactionNumber);
   }
 }
 	

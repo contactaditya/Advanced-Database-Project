@@ -57,6 +57,7 @@ public class ReplicatedConcurrencyControlAndRecovery {
 	int time = 1;
 	
 	while (input.hasNextLine()) {
+	  transactionManager.tryBufferedOperations(time);
 	  ArrayList<Operation> operationList = new ArrayList<Operation>();
 	  String inputLine = input.nextLine();
 	  String[] commands = inputLine.replaceAll("\\s+", "").split(";");
@@ -111,22 +112,23 @@ public class ReplicatedConcurrencyControlAndRecovery {
             transactionManager.end(time, transactionNumber);
 			break;
 		  case "fail":
-			transactionName = commandTokens[1];
+			/*transactionName = commandTokens[1];
 	        transactionNumber = Integer.parseInt(
 			    transactionName.substring(1, transactionName.length()));
-	        transactionManager.fail(time, transactionNumber);
+	        transactionManager.fail(time, transactionNumber);*/
+			transactionManager.fail(time, Integer.parseInt(commandTokens[1]));
 			break;
 		  case "recover":
-			transactionName = commandTokens[1];
+			/*transactionName = commandTokens[1];
 		    transactionNumber = Integer.parseInt(
 				transactionName.substring(1, transactionName.length()));
-		    transactionManager.fail(time, transactionNumber);
+		    transactionManager.fail(time, transactionNumber);*/
+			transactionManager.recover(time, Integer.parseInt(commandTokens[1]));
 			break;
 		  default:
 			throw new Exception("Invalid command type!");
 		}
 	  }
-	  transactionManager.tryBufferedOperations(time);
 	  time++;
 	}
 

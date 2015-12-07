@@ -78,11 +78,17 @@ public class Site {
   // transaction number then you should written true because you have a lock else written false
 	for (Data data : listOfData)  {
 	  if (data.name.equals(dataName)) {
+		if (data.waitingQueue.isEmpty()) {
+		  //System.out.println("  << Transaction " + transactionNumber + " DOES NOT HAVE LOCK 1 ON " + dataName + " >>");
+		  return false;
+		}
 	    if (data.waitingQueue.get(0) == transactionNumber) {
+	      System.out.println("  << Transaction " + transactionNumber + " HAVE LOCK ON " + dataName + " >>");
 		  return true;
 	    }
 	  }		
 	}  
+	//System.out.println("  <<<< Transaction " + transactionNumber + " DOES NOT HAVE LOCK 2 ON " + dataName + " >>");
 	return false;
   }
 }
