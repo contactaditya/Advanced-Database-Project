@@ -57,6 +57,7 @@ public class ReplicatedConcurrencyControlAndRecovery {
 	int time = 1;
 	
 	while (input.hasNextLine()) {
+	  //System.out.println("BUFFER SIZE = " + transactionManager.bufferOfOperations.size());
 	  transactionManager.tryBufferedOperations(time);
 	  ArrayList<Operation> operationList = new ArrayList<Operation>();
 	  String inputLine = input.nextLine();
@@ -129,6 +130,7 @@ public class ReplicatedConcurrencyControlAndRecovery {
 			throw new Exception("Invalid command type!");
 		}
 	  }
+	  System.out.println();
 	  time++;
 	}
 

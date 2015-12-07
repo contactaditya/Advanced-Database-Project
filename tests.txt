@@ -114,7 +114,7 @@ R(T2,x3)
 end(T2)
 end(T3)
 
-// Test 9
+// xTest 9
 // T1, T2, T3 ok. T3 should wait because older
 begin(T3)
 begin(T1)

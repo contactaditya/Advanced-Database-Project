@@ -92,12 +92,25 @@ public class Site {
 		  return false;
 		}
 	    if (data.waitingQueue.get(0) == transactionNumber) {
-	      System.out.println("  << Transaction " + transactionNumber + " HAVE LOCK ON " + dataName + " >>");
+	      //System.out.println("  << Transaction " + transactionNumber + " HAVE LOCK ON " + dataName + " >>");
 		  return true;
 	    }
 	  }		
 	}  
 	//System.out.println("  <<<< Transaction " + transactionNumber + " DOES NOT HAVE LOCK 2 ON " + dataName + " >>");
+	return false;
+  }
+  
+  public boolean isAlreadyWaitingForData(int transactionNumber, String dataName) throws Exception {
+	for (int data = 0; data < listOfData.size(); data++) {
+	  if (listOfData.get(data).name.equals(dataName)) {
+	    for (int transactionOnLine = 0; transactionOnLine < listOfData.get(data).waitingQueue.size(); transactionOnLine++) {
+	      if (listOfData.get(data).waitingQueue.get(transactionOnLine) == transactionNumber) {
+	    	return true;
+	      }
+	    }
+	  }
+	}
 	return false;
   }
 }
