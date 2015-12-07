@@ -37,23 +37,29 @@ public class TransactionManager {
 	   * Go through the array list called buffer of operations and for each 
 	   * operation call appropriate method depending on the type of operation.
       **/
-	for(Operation operation : bufferOfOperations) {
-	  if (operation.operationType == "read") {
-		int transactionNumber = operation.transactionNumber;
-		String dataName = operation.dataName;
+	if (bufferOfOperations.isEmpty()) {
+	  return;
+	}
+
+	int totalOperations = bufferOfOperations.size();
+	int operationsDone = 0;
+	while (operationsDone != totalOperations) {
+	  if (bufferOfOperations.get(operationsDone).operationType == "read") {
+		int transactionNumber = bufferOfOperations.get(operationsDone).transactionNumber;
+		String dataName = bufferOfOperations.get(operationsDone).dataName;
 		read(time, transactionNumber, dataName, false);
-		bufferOfOperations.remove(operation);
-	  }
-	  else if (operation.operationType == "write") {
-		int transactionNumber = operation.transactionNumber;
-		String dataName = operation.dataName; 
-		int value = operation.valueToWrite;
+		bufferOfOperations.remove(bufferOfOperations.get(0));
+	  } else if (bufferOfOperations.get(operationsDone).operationType == "write") {
+		int transactionNumber = bufferOfOperations.get(operationsDone).transactionNumber;
+		String dataName = bufferOfOperations.get(operationsDone).dataName; 
+		int value = bufferOfOperations.get(operationsDone).valueToWrite;
 		write(time, transactionNumber, dataName, value); 
-		bufferOfOperations.remove(operation);
-	  } else {
+		bufferOfOperations.remove(bufferOfOperations.get(0));
+      } else {
 		throw new Exception("Operation not handled!");
-	  }
-	}   
+      }
+      operationsDone++;
+	}  
   }
   
   public void begin(int time, int transactionNumber) {
@@ -112,6 +118,7 @@ public class TransactionManager {
 		else
 		  abort
 	 */
+	System.out.println("Transaction " + transactionNumber + " wants to read " + dataName + " at time " + time + ".");
 	Transaction transactionCopy = getTransaction(transactionNumber);
 	Site currentSite = null;
 	Data dataToReadCopy = null;
