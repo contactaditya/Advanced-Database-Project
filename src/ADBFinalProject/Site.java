@@ -71,4 +71,18 @@ public class Site {
     }
     return true;
   }
+  
+  public boolean haveLock(int transactionNumber, String dataName) {
+  // Go Through the listofdata and find the one that matches dataname and
+  // if it is same then check the first element in the waiting queue and if first element is same as 
+  // transaction number then you should written true because you have a lock else written false
+	for (Data data : listOfData)  {
+	  if (data.name.equals(dataName)) {
+	    if (data.waitingQueue.get(0) == transactionNumber) {
+		  return true;
+	    }
+	  }		
+	}  
+	return false;
+  }
 }
