@@ -1,39 +1,67 @@
 package ADBFinalProject;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
-
-// Author : Aditya Gupta (ag4479)
 
 public class Data 
 {
-  // This is the variable used for storing the different names of the data.
+  /**
+   * The name of the data item.
+   */
   String name;
 
-  // This is the variable used for storing the value of the actual data.
+  /**
+   * The committed and temporary values of the data item.
+   */
   ArrayList<Integer> values;
-	
-  // This is the variable used for storing last time when the data was modified.
+	 
+  /**
+   * The times when the committed and temporary values of the data item were written.
+   */
   ArrayList<Integer> modifiedTimes;
 	
-  // This boolean is used to check whether the data that is stored is temporary or not.
+  /**
+   * Whether the last value written is temporary or not.
+   */
   boolean isTemporary;
 	
-  // This boolean is used to indicate whether the data has been replicated on other sites or not
+  /**
+   * Whether the data has been replicated on other sites or not.
+   */
   boolean isReplicated;
 	
-  // This boolean is used to indicate whether data has been written to a transaction site after recovery.
+  /**
+   * Indicates whether data has been written to after the site recovered.
+   */
   boolean hasBeenWrittenToAfterRecovery;
 	
-  // This arraylist will store the transaction number which are waiting to be executed.
+  /**
+   * The list of transactions waiting for the lock on the data item.
+   */
   ArrayList<Integer> waitingQueue;
 	
-  // A constructor which will allow us to pass three values and set the default values.
+  /**
+   * Create a new data item with the specified name, value, initial time modified, and whether the data.
+   * item is replicated or not.
+   * @param dataName the name of the data item.
+   * @param value the value of the data item.
+   * @param modifiedTime the initial modified time of the data item.
+   * @param isReplicated whether the data item is replicated on other sites or not.
+   */
   public Data(String dataName, int value, int modifiedTime, boolean isReplicated) {
     this(dataName, value, modifiedTime, false, isReplicated, true);
   }
 	
-  // A Constructor which will initialise all the data members.
+  /**
+   * Create a new data item with the specified name, value, initial time modified, whether the data item is
+   * replicated or not, and whether the data has been written to after recovery.
+   * @param dataName the name of the data item.
+   * @param value the value of the data item.
+   * @param modifiedTime the initial modified time of the data item.
+   * @param isTemporary whether the value of the data item is temporary or not.
+   * @param isReplicated whether the data item is replicated on other sites or not. 
+   * @param hasBeenWrittenToAfterRecovery the default value of whether the data item has been written to
+   * after recovery.
+   */
   public Data(String dataName, int value, int modifiedTime, boolean isTemporary, boolean isReplicated, boolean hasBeenWrittenToAfterRecovery) {
 	values = new ArrayList<Integer>();
 	modifiedTimes = new ArrayList<Integer>();
@@ -47,6 +75,11 @@ public class Data
 	this.hasBeenWrittenToAfterRecovery = hasBeenWrittenToAfterRecovery;
   }
   
+  /**
+   * Write the specified value to the data item.
+   * @param modifiedTime the time the value was written.
+   * @param value the value to write to the data item.
+   */
   public void write(int modifiedTime, int value) {
 	values.add(value);
 	modifiedTimes.add(modifiedTime);

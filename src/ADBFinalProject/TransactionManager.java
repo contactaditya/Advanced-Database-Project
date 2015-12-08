@@ -8,14 +8,35 @@ import java.util.LinkedList;
 import ADBFinalProject.Data;
 import ADBFinalProject.Transaction;
 
-//Author : Aditya Gupta (ag4479)
-
+/**
+ * A transaction manager that handles input requests and translate them into operations for the
+ *  simulation system.
+ */
 public class TransactionManager {
+  /**
+   * A list of all the transactions seen so far.
+   */
   public LinkedList<Transaction> transactions;
+  
+  /**
+   * The total number of sites in the simulation.
+   */
   public int numberOfSites;
+  
+  /**
+   * A list of all the sites in the simulation.
+   */
   public Site[] sites;
+  
+  /**
+   * The list of operations to be retried at every time cycle.
+   */
   public ArrayList<Operation> bufferOfOperations;
 
+  /**
+   * Create a transaction manager with the specified number of sites to initialize.
+   * @param numberOfSites the number of sites to use in the simulation.
+   */
   public TransactionManager(int numberOfSites) {
 	transactions = new LinkedList<Transaction>();
 	this.numberOfSites = numberOfSites;
@@ -26,35 +47,50 @@ public class TransactionManager {
 	}
   }
   
+  /**
+   * Inserts the specified data with the specified value at the site specified and indicates
+   * whether the data being inserted is replicated or not.
+   * @param siteNumber the number of the site to initialize.
+   * @param dataName the name of the data to insert.
+   * @param dataValue the initial value of the data to insert.
+   * @param isReplicated whether the data being inserted is replicated data or not.
+   */
   public void initializeDataAtSite(int siteNumber, String dataName, int dataValue, boolean isReplicated) {
 	Data dataToAdd = new Data(dataName, dataValue, 0, isReplicated);
 	sites[siteNumber].addData(dataToAdd);
 	sites[siteNumber].lockTable.put(dataName, 0);
   }
 
+  /**
+   * Retry all buffered operations in the buffer of operations.
+   * @param time the current time when the operations are being retried.
+   * @throws Exception when there is a problem while executing a read or write operation.
+   */
   public void tryBufferedOperations(int time) throws Exception {
-	  /**
-	   * Go through the array list called buffer of operations and for each 
-	   * operation call appropriate method depending on the type of operation.
-      **/
 	if (bufferOfOperations.isEmpty()) {
 	  return;
 	}
 
 	int totalOperations = bufferOfOperations.size();
 	int operationsDone = 0;
-	while (operationsDone != totalOperations) {
-	  if (bufferOfOperations.get(operationsDone).operationType == "read") {
-		int transactionNumber = bufferOfOperations.get(operationsDone).transactionNumber;
-		String dataName = bufferOfOperations.get(operationsDone).dataName;
+	while (operationsDone < totalOperations) {
+	  int currentTransactionNumber = bufferOfOperations.get(0).transactionNumber;
+	  if (bufferOfOperations.get(0).operationType == "read") {
+		int transactionNumber = bufferOfOperations.get(0).transactionNumber;
+		String dataName = bufferOfOperations.get(0).dataName;
 		read(time, transactionNumber, dataName);
+		if (!bufferOfOperations.isEmpty()
+		    && bufferOfOperations.get(0).transactionNumber == currentTransactionNumber)
 		bufferOfOperations.remove(bufferOfOperations.get(0));
-	  } else if (bufferOfOperations.get(operationsDone).operationType == "write") {
-		int transactionNumber = bufferOfOperations.get(operationsDone).transactionNumber;
-		String dataName = bufferOfOperations.get(operationsDone).dataName; 
-		int value = bufferOfOperations.get(operationsDone).valueToWrite;
+	  } else if (bufferOfOperations.get(0).operationType == "write") {
+		int transactionNumber = bufferOfOperations.get(0).transactionNumber;
+		String dataName = bufferOfOperations.get(0).dataName; 
+		int value = bufferOfOperations.get(0).valueToWrite;
 		write(time, transactionNumber, dataName, value); 
-		bufferOfOperations.remove(bufferOfOperations.get(0));
+		if (!bufferOfOperations.isEmpty()
+		    && bufferOfOperations.get(0).transactionNumber == currentTransactionNumber) {
+		  bufferOfOperations.remove(bufferOfOperations.get(0));
+		}
       } else {
 		throw new Exception("Operation not handled!");
       }
@@ -62,6 +98,11 @@ public class TransactionManager {
 	}  
   }
   
+  /**
+   * Creates a new read/write transaction in the simulation.
+   * @param time the time the transaction began.
+   * @param transactionNumber the number of the operation.
+   */
   public void begin(int time, int transactionNumber) {
 	System.out.println("Transaction " + transactionNumber + " begins at time " + time + ".");
 	String transactionType = "readwrite";
@@ -69,6 +110,11 @@ public class TransactionManager {
     transactions.add(newTransaction);
   }
   
+  /**
+   * Creates a new read only transaction.
+   * @param time the time the transaction began.
+   * @param transactionNumber the number of the transaction.
+   */
   public void beginRO(int time, int transactionNumber) {
 	System.out.println("Transaction " + transactionNumber + " (read only) begins at time " + time + ".");
 	String transactionType = "readonly";
@@ -76,54 +122,35 @@ public class TransactionManager {
 	transactions.add(newTransaction);
   }
   
+  /**
+   * Lock and read the value of the data item specified if the operation comes from a read/write
+   * transaction or just read the value of the data if the operatin comes from a read only
+   * transaction.
+   * @param time the time the operation was issued.
+   * @param transactionNumber the transaction that issued the operation
+   * @param dataName the name of the data item to write to.
+   * @throws Exception when there is a problem while reading data.
+   */
   public void read(int time, int transactionNumber, String dataName) throws Exception {
 	if (isTransactionCommittedOrAborted(transactionNumber)) {
 	  return;
 	}
 	
 	System.out.println("Transaction " + transactionNumber + " wants to read " + dataName + " at time " + time + ".");
-	
 	read(time, transactionNumber, dataName, false);
   }
-	
+
+  /**
+   * Lock and read the value of the data item specified if the operation comes from a read/write
+   * transaction or just read the value of the data if the operatin comes from a read only
+   * transaction.
+   * @param time the time the operation was issued.
+   * @param transactionNumber the transaction that issued the operation
+   * @param dataName the name of the data item to write to.
+   * @param wait whether the transaction should wait in any available waiting queue.
+   * @throws Exception when there is a problem while reading data.
+   */
   public void read(int time, int transactionNumber, String dataName, boolean wait) throws Exception {
-	/**
-	    INCLUDE AS LAST PARAMETER A FLAG TO WAIT OR NOT
-		KEEP RECORD WHETHER A SITE CONTAINED D DURING THE SEARCH OR NOT
-		for all sites not failed
-		  if site contains D
-		    if READONLY
-		      if (state is consistent || (state not consistent && D is not replicated) || DATA NEEDED HAS BEEN WRITTEN TO AFTER RECOVERY)
-		        find correct copy for D to read
-		          read D
-		    else READWRITE
-		      if D is not locked && (state is consistent || D is not replicated || DATA NEEDED HAS BEEN WRITTEN TO AFTER RECOVERY)
-		        lock D
-		        read D
-		        return
-		      else
-		        if (not wait && D is replicated)
-		          try another site
-		        else if wait || D is non-replicated
-		          if T is older than R that locked D
-		            if T is older than Y the last transaction waiting for D
-		              if (D is non-replicated || D HAS BEEN WRITTEN TO AFTER RECOVER)
-		                get on waiting line for D
-		                BREAK
-		              ELSE IF (D IS REPLICATED && D HAS NOT BEEN WRITTEN TO AFTER RECOVERY)
-		                TRY ANOTHER SITE
-		                BREAK
-		          if D is non-replicated
-		            break
-		     
-		// HERE ONLY IF NOTHING IS READ
-		if no site checked contains D
-		  buffer operation
-		else if not wait
-		  call READ again with wait set to true
-		else
-		  abort
-	 */
 	Transaction transactionCopy = getTransaction(transactionNumber);
 	Site currentSite = null;
 	Data dataToReadCopy = null;
@@ -131,13 +158,13 @@ public class TransactionManager {
 	
 	boolean foundDataInSearch = false;
 	
-	// FIND A SITE THAT CONTAINS DATA TO READ
+	// Find a site that contains data to read.
     for (int site = 0; site < sites.length; site++) {
       if (sites[site].status.equals(Status.failed)) {
         continue;
       }
     	
-      // DETERMINE IF CURRENT SITE CONTAINS DATA TO READ
+      // Determine if the current site contains data to read.
 	  try {
 		boolean siteContainsData = false;
 	    Site siteToSearch = sites[site];
@@ -147,9 +174,6 @@ public class TransactionManager {
 		    dataToReadCopy = data;
 		    siteContainsData = true;
 		    foundDataInSearch = true;
-		    /*if (!siteToSearch.status.equals(Status.failed)) {
-		      foundDataInSearch = true;
-		    }*/
 		  }
 	    }
 		if (!siteContainsData) {
@@ -159,12 +183,12 @@ public class TransactionManager {
 	    System.out.println(e);
 	  }
 	  
-	  // THE OPERATION COMES FROM A READONLY TRANSACTION
-	  // FIND THE CORRECT COPY OF VALUE TO READ
+	  // The operation comes from a read only transaction.
       if (transactionCopy.transactionType.equals("readonly")) {
         if (currentSite.status.equals(Status.activeAndConsistent) ||
         	(currentSite.status.equals(Status.activeNotConsistent) && !dataToReadCopy.isReplicated)
         	|| dataToReadCopy.hasBeenWrittenToAfterRecovery) {
+          // Find the correct copy of the value to read.
           for (int times = dataToReadCopy.modifiedTimes.size() - 1 ; times >= 0 ; times--) {
       	    if (dataToReadCopy.modifiedTimes.get(times) < transactionCopy.arrivalTime) {
       		  if (!(times == dataToReadCopy.modifiedTimes.size() - 1 && dataToReadCopy.isTemporary)) {
@@ -179,28 +203,34 @@ public class TransactionManager {
         }
 	    return;
       } else {
-    	// THE OPERATION COMES FROM A READWRITE TRANSACTION
+    	// The operation comes from a read write transaction.
     	if (sites[site].haveLock(transactionNumber, dataName) || (sites[site].isDataLocked(dataName) < 2
     	  && (currentSite.status.equals(Status.activeAndConsistent) || !dataToReadCopy.isReplicated
     	  || dataToReadCopy.hasBeenWrittenToAfterRecovery))) {
-    	  // DATA IS IN SITE AND NOT LOCKED (OR ALREADY HOLD LOCK OR IS READ LOCKED), AND EITHER THE SITE IS CONSISTENT OR DATA REPLICATED
+    	  // Data is in site and is either not locked, transaction already hold a lock, or data
+    	  // is read locked and the site is active and consistent or the data is replicated.
     	  sites[site].lockData(dataName, "read");
-          sites[site].getData(dataName).waitingQueue.add(transactionNumber);
-          // ASSUMES THAT IF THERES NO LOCK THEN THERE IS NO TEMPORARY WRITE
+    	  if (sites[site].getData(dataName).waitingQueue.isEmpty()
+    		  || (!sites[site].getData(dataName).waitingQueue.isEmpty()
+    		  && sites[site].getData(dataName).waitingQueue.get(0) != transactionNumber)) {
+            sites[site].getData(dataName).waitingQueue.add(transactionNumber);
+    	  }
           System.out.println("  > Transaction " + transactionNumber + " read " + dataName
         	  + " = " + dataToReadCopy.values.get(dataToReadCopy.values.size() - 1) + ".");
           updateTransactionAccessInformation(transactionNumber, site, time);
           return;
     	} else if (sites[site].isDataLocked(dataName) > 1) {
-    	  // DATA IS IN SITE AND WRITE LOCKED
+    	  // Data is in the site and write locked.
     	  if (!wait && dataToReadCopy.isReplicated) {
     		break;
     	  } else if (wait || !dataToReadCopy.isReplicated) {
     		if (transactionCopy.arrivalTime <
     	        getTransaction(dataToReadCopy.waitingQueue.get(0)).arrivalTime) {
+    			// If transaction has an earlier arrival time than the one holding the lock.
     		  if (dataToReadCopy.waitingQueue.isEmpty() &&
     		    (!dataToReadCopy.isReplicated || sites[site].status.equals(Status.activeAndConsistent) ||
     		    (sites[site].status.equals(Status.activeNotConsistent) && dataToReadCopy.hasBeenWrittenToAfterRecovery))) {
+    			// If the waiting queue for the lock is empty, get on line for the lock.
     	    	sites[site].getData(dataName).waitingQueue.add(transactionNumber);
     	    	
     	    	Operation operationToBuffer = new Operation(transactionNumber,
@@ -209,7 +239,7 @@ public class TransactionManager {
     	    	return;
     	      } else {
     	    	if (sites[site].isAlreadyWaitingForData(transactionNumber, dataName)) {
-    	    	  // IF ALREADY WAITING IN QUEUE, HAVE TO REBUFFER OPERATION
+    	    	// The transaction is already on line for the lock, keep waiting.
     	    	  Operation operationToBuffer = new Operation(transactionNumber,
             	      transactionCopy.transactionType, "read", dataName);
                   bufferOfOperations.add(operationToBuffer);
@@ -221,6 +251,8 @@ public class TransactionManager {
     	    	
     	    	if (transactionCopy.arrivalTime <
     	    	    getTransaction(lastTransactionInQueue).arrivalTime) {
+    	          // If transaction has an earlier arrival time than the last one on line for the
+    	    	  // lock, get on line for the lock.
     	    	  if (!dataToReadCopy.isReplicated || dataToReadCopy.hasBeenWrittenToAfterRecovery) {
     	    		sites[site].getData(dataName).waitingQueue.add(transactionNumber);
         	    	  
@@ -232,6 +264,8 @@ public class TransactionManager {
     	    		break;
     	    	  }
     	    	} else {
+    	          // The transaction does not have an earlier arrival time than the last one on
+        	      // line for the lock, abort.
     	    	  String abortReason = "transaction "
     	    	      + transactionNumber + " cannot get lock on " + dataName
     	    	      + " since transaction " + lastTransactionInQueue + " had a lock on "
@@ -244,25 +278,29 @@ public class TransactionManager {
     		}
     	  }
     	  
+    	  // Since transaction cannot read data, if data to read is replicated, try next site.
     	  if (!dataToReadCopy.isReplicated) {
     		break;
     	  }
     	} else {
-    	  // DATA IS NOT IN SITE. SHOULD NOT HAPPEN. DO NOTHING.
+    	  // Data is not in any site. Should not happen.
     	  throw new Exception("Read is in an invalid state!");
     	}   			 
 	  }
     }
     
-    // HERE ONLY IF NOTHING IS READ AFTER FOR LOOP-ING
+    // If nothing is read and no lock is obtained.
     if (!foundDataInSearch) {
+      // If data is found during search, but cannot read or get lock at this time.
       Operation operationToBuffer = new Operation(transactionNumber,
           transactionCopy.transactionType, "read", dataName);
       bufferOfOperations.add(operationToBuffer);
     } else if (!wait) {
+      // If cannot read data and did not wait for a lock previously, now try to wait on any line
+      // for a lock.
       read(time, transactionNumber, dataName, true);
     } else {
-      // CANNOT GET IN QUEUE FOR DATA
+      // Cannot read from any site and no locks are available.
       String abortReason = "transaction " + transactionNumber + " cannot get a lock on "
           + dataName + " since " + dataName 
           + " at all sites is held or is waiting on by older transactions.";
@@ -271,25 +309,20 @@ public class TransactionManager {
     }
   }
 
+  /**
+   * Lock and writes the specified value to the specified data item.
+   * @param time the item the operation was issued.
+   * @param transactionNumber the transaction that issued the operation.
+   * @param dataName the name of the data item to read.
+   * @param value the name of the data item to write to.
+   * @throws Exception when there is a problem writing to the data.
+   */
   public void write(int time, int transactionNumber, String dataName, int value) throws Exception {
 	if (isTransactionCommittedOrAborted(transactionNumber)) {
 	  return;
 	}
 	System.out.println("Transaction " + transactionNumber + " wants to write " + value + " to " + dataName + " at time " + time + ".");
-	/**
-	 * for all sites S not failed
-	 *   if get lock on D successful
-	 *     get lock on data
-	 *     write value to data
-	 *   else if D is locked
-	 *     if T.arrivalTime is earlier than transaction S that holds lock on D's arrival time
-	 *       if (T.arrivalTime is earlier than last item in D's queue
-	 *         get on D's queue
-	 *       else
-	 *         abort
-	 *     else
-	 *       abort
-	 */
+
 	for (int site = 0; site < numberOfSites; site++) {
 	  // FOR EACH SITE THAT HAS NOT FAILED
 	  if (!sites[site].status.equals(Status.failed)) {
@@ -320,6 +353,14 @@ public class TransactionManager {
 	    	  bufferOfOperations.add(operationToBuffer);
 	    	  return;
 			} else {
+			  if (sites[site].isAlreadyWaitingForData(transactionNumber, dataName)) {
+				// IF ALREADY WAITING IN QUEUE, HAVE TO REBUFFER OPERATION
+				Operation operationToBuffer = new Operation(transactionNumber,
+		      	    currentTransaction.transactionType, "write", dataName, value);
+		      	bufferOfOperations.add(operationToBuffer);
+		      	return;
+			  }
+				
 			  int lastTransactionInQueue =
 			      dataToWriteToCopy.waitingQueue.get(dataToWriteToCopy.waitingQueue.size() - 1);
 			  if (getTransaction(transactionNumber).arrivalTime
@@ -336,7 +377,7 @@ public class TransactionManager {
 				    + " since transaction " + lastTransactionInQueue + " had a lock on "
 				    + dataName + " and is older.";
 				abortTransaction(transactionNumber, abortReason);
-				System.out.println("  > Transaction " + transactionNumber + " aborted!");
+				System.out.println("  > Transaction " + transactionNumber + " aborted! 1");
 				return;
 			  }
 			}
@@ -347,7 +388,7 @@ public class TransactionManager {
 				+ " since transaction " + dataToWriteToCopy.waitingQueue.get(0) + " had a lock on "
 				+ dataName + " and is older.";
 		    abortTransaction(transactionNumber, abortReason);
-		    System.out.println("  > Transaction " + transactionNumber + " aborted!");
+		    System.out.println("  > Transaction " + transactionNumber + " aborted! 2");
 		    return;
 		  }
 		}
@@ -355,20 +396,29 @@ public class TransactionManager {
 	}
   }
 	
+  /**
+   * Prints all copies of all committed values of all variables at all sites ordered by site.
+   */
   public void dump() {
-	//System.out.println("DUMP called");
 	System.out.println("\nValue of Data at Sites");
 	for (int site = 0; site < numberOfSites; site++) {
 	  dump(site, null);
 	}
   }
   
+  /**
+   * Prints all copies of all committed values of all variables at the specified site.
+   * @param siteNumber the site to output.
+   */
   public void dump(int siteNumber) {
-	//System.out.println("DUMP called for site " + siteNumber);
 	System.out.println("\nValue of Data at Site " + siteNumber);
 	dump(siteNumber, null);
   }
   
+  /**
+   * Prints all copies of all committed values of the specified variable at all sites.
+   * @param dataName the name of the data item to output.
+   */
   public void dump(String dataName) {
 	//System.out.println("DUMP called for data " + dataName);
 	System.out.println("\nValue of " + dataName + " at All Sites");
@@ -376,7 +426,12 @@ public class TransactionManager {
 	  dump(site, dataName); 
 	}
   }
-	
+
+  /**
+   * Prints all copies of all committed values of the specified variable at the specified site.
+   * @param siteNumber the site to output.
+   * @param key the name of the data item to output.
+   */
   public void dump(int siteNumber, String key) {
 	System.out.println("<Site " + (siteNumber + 1) + ">");
 	for (int data = sites[siteNumber].listOfData.size() - 1; data >= 0 ; data--) {
@@ -398,6 +453,11 @@ public class TransactionManager {
 	System.out.println();
   }
   
+  /**
+   * Determine whether the specified transaction can commit or not and clears its resources held.
+   * @param time the time the operation was issued.
+   * @param transactionNumber the transaction that issued the command.
+   */
   public void end(int time, int transactionNumber) {
 	System.out.println("Transaction " + transactionNumber + " wants to end at time " + time + ".");
 	if (getTransaction(transactionNumber).commitSuccess != null
@@ -406,18 +466,10 @@ public class TransactionManager {
       return;
 	}
 	System.out.println("Transaction " + transactionNumber + " ends at time " + time + ".");
-	// REPORT WHETHER TRANSACTION CAN COMMIT
-	/* for all sites accessed
-	 *   if the site is down || siteLastRecovery == null || lastAccessTime < siteLastRecoveryTime
-	 *     set transaction.commitStatus to fail
-	 *     set transaction.abortReason to site x has failed since last access
-	 *     break 
-	 */
 	ArrayList<Transaction.AccessPair> accessInformation =
 	    getTransaction(transactionNumber).getAccessInformation();
 	
-	//System.out.println("  accessInformation.size() = " + accessInformation.size());
-	
+	// Determine whether any sites the transaction accessed has failed since last access.
 	for (int record = 0; record < accessInformation.size(); record++) {
 	  int siteAccessed = accessInformation.get(record).site;
 	  int timeAccessed = accessInformation.get(record).accessTime;
@@ -435,6 +487,7 @@ public class TransactionManager {
 		}
 	  }
 	}
+	// Clear resources held by transaction.
 	for (Transaction transaction : transactions) {
 	  if (transaction.transactionNumber == transactionNumber) {
 		transaction.commitSuccess = true;
@@ -443,14 +496,15 @@ public class TransactionManager {
 		return;
 	  }
 	}
-	
-	// REMOVE TRANSACTION FROM DATA QUEUESS' 0th POSITION AND UNLOCK ALL LOCKS HELD (MOVE THE NEXT TRANSACTION IN QUEUE OR NOT?)
   }
 	
+  /**
+   * Mark the specified site as failed at the specified time.
+   * @param time the time the operation was issued.
+   * @param siteNumber the site to operate on.
+   */
   public void fail(int time, int siteNumber) {
-	/* set site's status to fail
-	 * set all values in lockTable to 0 (empty)
-	 */
+	// Set the site's status to failed and set clear all locks in the lock table.
 	System.out.println("Site " + siteNumber + " failed at time " + time + ".");
     sites[siteNumber - 1].status = Status.failed;
     Iterator i = sites[siteNumber - 1].lockTable.entrySet().iterator();
@@ -460,23 +514,29 @@ public class TransactionManager {
       value.setValue(0);
     }
     
+    // Mark all data in the site as inconsistent.
     for (int data = 0; data < sites[siteNumber - 1].listOfData.size(); data++) {
       sites[siteNumber - 1].listOfData.get(data).hasBeenWrittenToAfterRecovery = false;
     }
   }
 
+  /**
+   * Mark the specified site as recovered at the specified time.
+   * @param time the time the operation was issued.
+   * @param siteNumber the site to operate on.
+   */
   public void recover(int time, int siteNumber) {
-	/* set site's status to activeNotConsistent
-	 * set site's last recoverTime to time
-	 */
+	// Set the site's status to active but not consistent and set the site's recovery time.
 	Site currentSite = sites[siteNumber - 1];
 	currentSite.status = Status.activeNotConsistent;
 	currentSite.lastRecoverTime = time;
 	System.out.println("Site " + siteNumber + " recovered at time " + time + ".");
   }
   
-  public void printSummary() throws Exception {
-	// Output whether each transaction committed successfully or failed to commit.
+  /**
+   * Output whether each transaction committed successfully or failed to commit.
+   */
+  public void printSummary() {
 	System.out.println("\nCommit Summary");
 	for (Transaction transaction : transactions) {
 	  if (transaction.commitSuccess == null) {
@@ -492,6 +552,11 @@ public class TransactionManager {
 	System.out.println("\nOperations in operations buffer: " + bufferOfOperations.size());
   }
   
+  /**
+   * Get a reference to the transaction specified.
+   * @param transactionNumber the transaction to get.
+   * @return a reference to the transaction specified.
+   */
   public Transaction getTransaction(int transactionNumber) {
     for (Transaction transaction : transactions) {
       if (transaction.transactionNumber == transactionNumber) {
@@ -501,6 +566,12 @@ public class TransactionManager {
     return null;
   }
   
+  /**
+   * Mark the specified transaction as aborted and indicate the abort reason.
+   * @param transactionNumber the transaction to abort.
+   * @param reason the reason the transaction was aborted.
+   * @return whether the abortion was successful or not.
+   */
   public boolean abortTransaction(int transactionNumber, String reason) {
     for (Transaction transaction : transactions) {
       if (transaction.transactionNumber == transactionNumber) {
@@ -515,21 +586,23 @@ public class TransactionManager {
     return false;
   }
   
+  /**
+   * Free locks held and erase temporary values written by aborted transactions. 
+   * @param transactionNumber the transaction aborted.
+   */
   public void cleanUpAbortedTransaction(int transactionNumber) {
-	// clear bufferOfOperations with transactionNumber
+	// Remove all buffered operations from the transaction.
   	for (int operation = bufferOfOperations.size() - 1; operation >= 0; operation--) {
   	  if (bufferOfOperations.get(operation).transactionNumber == transactionNumber) {
   		bufferOfOperations.remove(operation);
   	  }
   	}
   	
-  	// free locks held by transaction
-  	// erase temporary values written
+  	// Free locks held by the transaction and erase the temporary values written.
   	for (int site = 0; site < numberOfSites; site++) {
   	  for (int data = 0; data < sites[site].listOfData.size(); data++) {
   		if (!sites[site].listOfData.get(data).waitingQueue.isEmpty()
   		    && sites[site].listOfData.get(data).waitingQueue.get(0) == transactionNumber) {
-  		  // FREE LOCK, ERASE TEMP VALUES, REMOVE FROM FRONT OF QUEUE
   		  Data currentData = sites[site].listOfData.get(data);
   		  sites[site].lockTable.put(currentData.name, 0);
   		  if (sites[site].listOfData.get(data).isTemporary) {
@@ -537,16 +610,17 @@ public class TransactionManager {
   			sites[site].listOfData.get(data).modifiedTimes.remove(currentData.modifiedTimes.size() - 1);
   		  }
   		  sites[site].listOfData.get(data).waitingQueue.remove(0);
-  		  // THE NEXT TRANSACTION IN LINE MOVES UP AND NOW HOLDS THE LOCK
+  		  // The next transaction in line for the lock on a data item moves up and now holds the lock.
   		}
   	  }
   	}
   }
   
+  /**
+   * Free locks held by and make values written by the committed transaction permanent.
+   * @param transactionNumber the transaction that was committed successfully.
+   */
   public void finalizeCommittedTransaction(int transactionNumber) {
-	// FREE LOCKS
-	// MAKE WRITTEN VALUES PERMANENT
-	// REMOVE FROM WAITING QUEUE
 	if (getTransaction(transactionNumber).transactionType == "readonly") {
 	  return;
 	}
@@ -560,12 +634,18 @@ public class TransactionManager {
 			sites[site].listOfData.get(data).isTemporary = false;
 		  }
 		  sites[site].listOfData.get(data).waitingQueue.remove(0);
-		  // THE NEXT TRANSACTION IN LINE MOVES UP AND NOW HOLDS THE LOCK
+		// The next transaction in line for the lock on a data item moves up and now holds the lock.
 		}
 	  }
 	}
   }
   
+  /**
+   * Record the site and the time that the specified transaction accessed.
+   * @param transactionNumber the transaction to update.
+   * @param siteNumber the site that the transaction accessed.
+   * @param accessTime the time the specified site was accessed by the transaction.
+   */
   public void updateTransactionAccessInformation(int transactionNumber,
       int siteNumber, int accessTime) {
     for (Transaction transaction : transactions) {
@@ -577,6 +657,12 @@ public class TransactionManager {
     }
   }
   
+  /**
+   * Determine whether the specified transaction is committed or aborted, or neither.
+   * @param transactionNumber the transaction to check.
+   * @return whether the specified transaction is committed or aborted or neither.
+   * @throws Exception if the transaction specified does not exist.
+   */
   public boolean isTransactionCommittedOrAborted(int transactionNumber) throws Exception {
 	for (Transaction transaction : transactions) {
 	  if (transaction.transactionNumber == transactionNumber) {
@@ -590,7 +676,3 @@ public class TransactionManager {
 	throw new Exception("Operation from non-existent transaction: " + transactionNumber);
   }
 }
-	
-	
-	
-

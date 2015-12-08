@@ -6,12 +6,30 @@ package ADBFinalProject;
  */
 
 public class Operation {
+  /**
+   * The number of the transaction.
+   */	
   public int transactionNumber;
+  
+  /**
+   * The type of the transaction.
+   */	
   public String transactionType;
+  
+  /**
+   * The type of the operation.
+   */
   public String operationType;
+  
+  /**
+   * The name of the data item in the operation.
+   */
   public String dataName;
+  
+  /**
+   * The value that needs to be written.
+   */
   public Integer valueToWrite;
-  public int waitingLine;
   
   /***
    * Construct an operation object with a transaction number, the type of operation, and the name
@@ -35,13 +53,11 @@ public class Operation {
    * @param dataToOperateOn the name of the data
    * @param value the value to write to the data specified.
    */
-  
   public Operation(int transactionNum, String transType, String opType, String dataToOperateOn, Integer value) {
     transactionNumber = transactionNum;
     transactionType = transType;
     operationType = opType;
     dataName = dataToOperateOn;
     valueToWrite = value;
-    waitingLine = -1;
   }
 }

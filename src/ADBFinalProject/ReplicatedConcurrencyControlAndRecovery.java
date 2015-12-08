@@ -14,7 +14,6 @@ import java.util.Scanner;
 
 /***
  * Performs the replicated concurrency control and recovery simulation.
- * @author Shikuan Huang
  */
 
 public class ReplicatedConcurrencyControlAndRecovery {
@@ -32,14 +31,12 @@ public class ReplicatedConcurrencyControlAndRecovery {
 		boolean isReplicated = false;
 		int siteNumberToInsert = dataNumber % numberOfSites;
 		transactionManager.initializeDataAtSite(siteNumberToInsert, dataName, initialValue, isReplicated);
-		//System.out.println(dataName + "(" + isReplicated + ")" + " with value " + initialValue + " added to site " + (siteNumberToInsert + 1));
 	  }
 	  else {
 		// Initialize even indexed data.
 		boolean isReplicated = true;
 		for (int site = 0; site < numberOfSites; site++) {
 		  transactionManager.initializeDataAtSite(site, dataName, initialValue, isReplicated);
-		  //System.out.println(dataName + "(" + isReplicated + ")" + " with value " + initialValue + " added to site " + (site + 1));
 		}
 	  }
 	}
@@ -54,10 +51,9 @@ public class ReplicatedConcurrencyControlAndRecovery {
       input = new Scanner(System.in);
 	}
 	
+	// While there are more commands, read a line of input, parse, call appropriate handler.
 	int time = 1;
-	
 	while (input.hasNextLine()) {
-	  //System.out.println("BUFFER SIZE = " + transactionManager.bufferOfOperations.size());
 	  transactionManager.tryBufferedOperations(time);
 	  ArrayList<Operation> operationList = new ArrayList<Operation>();
 	  String inputLine = input.nextLine();
@@ -66,7 +62,6 @@ public class ReplicatedConcurrencyControlAndRecovery {
 		String command = commands[currentCommand];
 		String[] commandTokens = command.split("[,\\(\\)]");
 		String commandType = commandTokens[0];
-		// CHECK IF THE TRANSACTION HAS BEEN ABORTED IN APPROPRIATE OPERATIONS
 		switch(commandType) {
 		  case "begin":
 			String transactionName = commandTokens[1];
@@ -113,17 +108,9 @@ public class ReplicatedConcurrencyControlAndRecovery {
             transactionManager.end(time, transactionNumber);
 			break;
 		  case "fail":
-			/*transactionName = commandTokens[1];
-	        transactionNumber = Integer.parseInt(
-			    transactionName.substring(1, transactionName.length()));
-	        transactionManager.fail(time, transactionNumber);*/
 			transactionManager.fail(time, Integer.parseInt(commandTokens[1]));
 			break;
 		  case "recover":
-			/*transactionName = commandTokens[1];
-		    transactionNumber = Integer.parseInt(
-				transactionName.substring(1, transactionName.length()));
-		    transactionManager.fail(time, transactionNumber);*/
 			transactionManager.recover(time, Integer.parseInt(commandTokens[1]));
 			break;
 		  default:
