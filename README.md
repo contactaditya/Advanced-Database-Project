@@ -1,0 +1,2 @@
+# Advanced-Database-Project
+In this project we implemented a distributed database, complete with multiversion concurrency control, deadlock avoidance, replication, and failure recovery. In this project we have used available copies approach to replication using two phase locking (using read and write locks) at each site and validation at commit time. We avoided deadlocks using the wait-die protocol in which older transactions wait for younger ones, but younger ones abort rather than wait for older ones.
