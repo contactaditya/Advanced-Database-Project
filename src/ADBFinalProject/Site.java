@@ -46,7 +46,7 @@ public class Site {
    * @param dataToAdd the data to add to the site.
    */
   public void addData(Data dataToAdd) {
-	listOfData.add(dataToAdd);
+     listOfData.add(dataToAdd);
   }
   
   /**
@@ -57,21 +57,21 @@ public class Site {
    * @throws Exception when an invalid lock type is specified.
    */
   public boolean lockData(String dataName, String lockType) throws Exception {
-	if (isDataLocked(dataName) == 1) {
-      return false;
-	}
-	if (lockType == "read") {
-	  if (lockTable.get(dataName) == 2) {
-		return true;
-	  }
-      lockTable.put(dataName, 1);	
-	} else if (lockType == "write") {
-	  lockTable.put(dataName, 2);
-	} else {
-	  throw new Exception("Invalid lock type!");
-	}
+      if (isDataLocked(dataName) == 1) {
+        return false;
+      }
+      if (lockType == "read") {
+        if (lockTable.get(dataName) == 2) {
+	  return true;
+        }
+         lockTable.put(dataName, 1);	
+      } else if (lockType == "write") {
+	 lockTable.put(dataName, 2);
+      } else {
+	 throw new Exception("Invalid lock type!");
+      }
 	
-	return true;
+     return true;
   }
   
   /**
@@ -117,15 +117,15 @@ public class Site {
    * @throws Exception when there is a an issue with the lock on the data item.
    */
   public boolean writeToData(int time, String dataName, int value) throws Exception {
-	if (isDataLocked(dataName) == 1) {
-      return false;
-	}
-    for (int data = 0; data < listOfData.size(); data++) {
-      if (listOfData.get(data).name.equals(dataName)) {
-        listOfData.get(data).write(time, value);
-        break;
+      if (isDataLocked(dataName) == 1) {
+         return false;
       }
-    }
+      for (int data = 0; data < listOfData.size(); data++) {
+        if (listOfData.get(data).name.equals(dataName)) {
+          listOfData.get(data).write(time, value);
+          break;
+        }
+      }
     return true;
   }
   
@@ -136,19 +136,18 @@ public class Site {
    * @return whether the specified transaction has a lock on the data item specified.
    */
   public boolean haveLock(int transactionNumber, String dataName) {
-	// Go through the list of data and see if the transaction that has the lock on the specified
-	// item is the transaction specified.
-	for (Data data : listOfData)  {
-	  if (data.name.equals(dataName)) {
-		if (data.waitingQueue.isEmpty()) {
-		  return false;
-		}
-	    if (data.waitingQueue.get(0) == transactionNumber) {
-		  return true;
-	    }
-	  }		
+    // Go through the list of data and see if the transaction that has the lock on the specified item is the transaction specified.
+    for (Data data : listOfData)  {
+      if (data.name.equals(dataName)) {
+	if (data.waitingQueue.isEmpty()) {
+	   return false;
 	}
-	return false;
+	if (data.waitingQueue.get(0) == transactionNumber) {
+	   return true;
+	}
+      }		
+    }
+    return false;
   }
   
   /**
@@ -160,15 +159,15 @@ public class Site {
    * data item.
    */
   public boolean isAlreadyWaitingForData(int transactionNumber, String dataName) {
-	for (int data = 0; data < listOfData.size(); data++) {
-	  if (listOfData.get(data).name.equals(dataName)) {
-	    for (int transactionOnLine = 0; transactionOnLine < listOfData.get(data).waitingQueue.size(); transactionOnLine++) {
-	      if (listOfData.get(data).waitingQueue.get(transactionOnLine) == transactionNumber) {
-	    	return true;
-	      }
+     for (int data = 0; data < listOfData.size(); data++) {
+       if (listOfData.get(data).name.equals(dataName)) {
+	 for (int transactionOnLine = 0; transactionOnLine < listOfData.get(data).waitingQueue.size(); transactionOnLine++) {
+	    if (listOfData.get(data).waitingQueue.get(transactionOnLine) == transactionNumber) {
+	      return true;
 	    }
-	  }
-	}
-	return false;
+	 }
+       }
+     }
+    return false;
   }
 }
