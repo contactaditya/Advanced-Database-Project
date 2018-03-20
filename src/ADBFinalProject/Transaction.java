@@ -49,14 +49,13 @@ public class Transaction {
    * @param arrival the arrival time of the transaction.
    */
   public Transaction(int transactionNum, String type, int arrival) {
-
-	transactionNumber = transactionNum;
-	transactionType = type;	 
-	arrivalTime = arrival;
-	commitSuccess = null;
-	listOfTimeAccessed = new ArrayList<Integer>();
-	listOfSitesAccessed = new ArrayList<Integer>();
-	abortReason = null;
+    transactionNumber = transactionNum;
+    transactionType = type;	 
+    arrivalTime = arrival;
+    commitSuccess = null;
+    listOfTimeAccessed = new ArrayList<Integer>();
+    listOfSitesAccessed = new ArrayList<Integer>();
+    abortReason = null;
   }
   
   /**
@@ -91,9 +90,9 @@ public class Transaction {
    * A pair containing a site and the time the site was accessed.
    */
   public class AccessPair {
-	/**
-	 * The site accessed.
-	 */
+    /**
+     * The site accessed.
+     */
     public int site;
     
     /**
