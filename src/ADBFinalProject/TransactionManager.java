@@ -76,10 +76,10 @@ public class TransactionManager {
     while (operationsDone < totalOperations) {
       int currentTransactionNumber = bufferOfOperations.get(0).transactionNumber;
       if (bufferOfOperations.get(0).operationType == "read") {
-	int transactionNumber = bufferOfOperations.get(0).transactionNumber;
+        int transactionNumber = bufferOfOperations.get(0).transactionNumber;
 	String dataName = bufferOfOperations.get(0).dataName;
 	read(time, transactionNumber, dataName);
-	if (!bufferOfOperations.isEmpty() && bufferOfOperations.get(0).transactionNumber == currentTransactionNumber)
+	if (!bufferOfOperations.isEmpty() && bufferOfOperations.get(0).transactionNumber == currentTransactionNumber) {
 	   bufferOfOperations.remove(bufferOfOperations.get(0));
 	} else if (bufferOfOperations.get(0).operationType == "write") {
 	   int transactionNumber = bufferOfOperations.get(0).transactionNumber;
@@ -93,7 +93,8 @@ public class TransactionManager {
 	  throw new Exception("Operation not handled!");
         }
         operationsDone++;
-    }  
+      }  
+    }
   }
   
   /**
